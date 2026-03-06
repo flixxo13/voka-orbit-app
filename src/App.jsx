@@ -64,7 +64,7 @@ export default function App() {
     ladeVokabeln()
   }
 
-  async function handleNotifAktivieren() {
+  /*async function handleNotifAktivieren() {
     setNotifStatus('⏳ Wird aktiviert...')
     const token = await aktiviereNotifications()
     if (token) {
@@ -77,6 +77,27 @@ export default function App() {
           icon: '/icon-192.png'
         })
       }, 5000)
+    } else {
+      setNotifStatus('❌ Nicht erlaubt. Bitte in Browser-Einstellungen aktivieren.')
+    }
+    setTimeout(() => setNotifStatus(''), 4000)
+  }*/
+
+async function handleNotifAktivieren() {
+    setNotifStatus('⏳ Wird aktiviert...')
+    const token = await aktiviereNotifications()
+    if (token) {
+      setNotifAktiv(true)
+      setNotifStatus('✅ Notifications aktiv!')
+      // Android-kompatibler Test über Service Worker
+      setTimeout(async () => {
+        const reg = await navigator.serviceWorker.ready
+        reg.showNotification('🚀 VokaOrbit', {
+          body: 'Super! Du wirst ab jetzt an fällige Vokabeln erinnert.',
+          icon: '/icon-192.png',
+          vibrate: [200, 100, 200]
+        })
+      }, 3000)
     } else {
       setNotifStatus('❌ Nicht erlaubt. Bitte in Browser-Einstellungen aktivieren.')
     }
