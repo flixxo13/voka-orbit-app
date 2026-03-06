@@ -1,17 +1,12 @@
 import { useState, useEffect } from 'react'
-import { db, collection, addDoc, getDocs } from './firebase'
+import { db, collection, addDoc, getDocs, messaging, aktiviereNotifications, onMessage } from './firebase'
 import { berechneNaechsteWiederholung, sindFaellig } from './fsrs'
 import { doc, updateDoc } from 'firebase/firestore'
 
-const FARBEN = {
-  1: '#e74c3c',
-  2: '#e67e22', 
-  3: '#2ecc71',
-  4: '#3498db'
-}
+const FARBEN = { 1: '#e74c3c', 2: '#e67e22', 3: '#2ecc71', 4: '#3498db' }
 
 export default function App() {
-  const [ansicht, setAnsicht] = useState('lernen') // lernen | hinzufuegen
+  const [ansicht, setAnsicht] = useState('lernen')
   const [vokabeln, setVokabeln] = useState([])
   const [faellige, setFaellige] = useState([])
   const [aktuelleKarte, setAktuelleKarte] = useState(null)
@@ -19,9 +14,18 @@ export default function App() {
   const [neuesWort, setNeuesWort] = useState('')
   const [neueUebersetzung, setNeueUebersetzung] = useState('')
   const [status, setStatus] = useState('')
+  const [notifStatus, setNotifStatus] = useState('') 
+  const [notifAktiv, setNotifAktiv] = useState(false)
 
   useEffect(() => {
     ladeVokabeln()
+    // Prüfen ob Notifications bereits erlaubt
+    if (Notification.permission === 'granted') setNotifAktiv(true)
+    
+    // Foreground Messages empfangen
+    onMessage(messaging, (payload) => {
+      setStatus('🔔 ' + payload.notification.title)
+    })
   }, [])
 
   async function ladeVokabeln() {
@@ -30,9 +34,7 @@ export default function App() {
     setVokabeln(liste)
     const faelligeListe = sindFaellig(liste)
     setFaellige(faelligeListe)
-    if (faelligeListe.length > 0) {
-      setAktuelleKarte(faelligeListe[0])
-    }
+    if (faelligeListe.length > 0) setAktuelleKarte(faelligeListe[0])
   }
 
   async function bewerteKarte(bewertung) {
@@ -62,36 +64,80 @@ export default function App() {
     ladeVokabeln()
   }
 
+  async function handleNotifAktivieren() {
+    setNotifStatus('⏳ Wird aktiviert...')
+    const token = await aktiviereNotifications()
+    if (token) {
+      setNotifAktiv(true)
+      setNotifStatus('✅ Notifications aktiv!')
+      // Testnotification nach 5 Sekunden
+      setTimeout(() => {
+        new Notification('🚀 VokaOrbit', {
+          body: 'Notifications funktionieren! Du wirst an deine Vokabeln erinnert.',
+          icon: '/icon-192.png'
+        })
+      }, 5000)
+    } else {
+      setNotifStatus('❌ Nicht erlaubt. Bitte in Browser-Einstellungen aktivieren.')
+    }
+    setTimeout(() => setNotifStatus(''), 4000)
+  }
+
   return (
     <div style={{ maxWidth: 480, margin: '0 auto', fontFamily: 'system-ui', minHeight: '100vh', background: '#f0eeff' }}>
-      
+
       {/* Header */}
       <div style={{ background: '#5c35d4', padding: '1.2rem', color: 'white' }}>
         <h1 style={{ margin: 0, fontSize: '1.5rem' }}>🚀 VokaOrbit</h1>
         <p style={{ margin: '0.2rem 0 0', opacity: 0.8, fontSize: '0.9rem' }}>
-          {faellige.length} Vokabeln fällig · {vokabeln.length} gesamt
+          {faellige.length} fällig · {vokabeln.length} gesamt
         </p>
       </div>
 
+      {/* Notification Banner */}
+      {!notifAktiv && (
+        <div style={{
+          background: '#fff3cd', padding: '0.9rem 1.2rem',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          borderBottom: '1px solid #ffc107'
+        }}>
+          <span style={{ fontSize: '0.9rem', color: '#856404' }}>
+            🔔 Aktiviere Erinnerungen!
+          </span>
+          <button onClick={handleNotifAktivieren} style={{
+            background: '#ffc107', border: 'none', borderRadius: 6,
+            padding: '0.4rem 0.9rem', cursor: 'pointer', fontWeight: 'bold',
+            fontSize: '0.85rem'
+          }}>
+            Aktivieren
+          </button>
+        </div>
+      )}
+      {notifStatus && (
+        <div style={{ background: '#e8f5e9', padding: '0.7rem 1.2rem', fontSize: '0.9rem', color: '#2e7d32' }}>
+          {notifStatus}
+        </div>
+      )}
+
       {/* Navigation */}
       <div style={{ display: 'flex', background: 'white', borderBottom: '2px solid #eee' }}>
-        {['lernen', 'hinzufuegen'].map(a => (
+        {['lernen', 'hinzufuegen', 'einstellungen'].map(a => (
           <button key={a} onClick={() => setAnsicht(a)} style={{
             flex: 1, padding: '0.8rem', border: 'none', cursor: 'pointer',
             background: ansicht === a ? '#f0eeff' : 'white',
             color: ansicht === a ? '#5c35d4' : '#666',
             fontWeight: ansicht === a ? 'bold' : 'normal',
             borderBottom: ansicht === a ? '2px solid #5c35d4' : '2px solid transparent',
-            fontSize: '0.95rem'
+            fontSize: '0.85rem'
           }}>
-            {a === 'lernen' ? '🧠 Lernen' : '➕ Hinzufügen'}
+            {a === 'lernen' ? '🧠 Lernen' : a === 'hinzufuegen' ? '➕ Neu' : '⚙️ Einst.'}
           </button>
         ))}
       </div>
 
       <div style={{ padding: '1.5rem' }}>
 
-        {/* LERNEN Ansicht */}
+        {/* LERNEN */}
         {ansicht === 'lernen' && (
           <>
             {aktuelleKarte ? (
@@ -115,8 +161,7 @@ export default function App() {
                   ) : (
                     <button onClick={() => setZeigeAntwort(true)} style={{
                       background: '#5c35d4', color: 'white', border: 'none',
-                      padding: '0.75rem 2rem', borderRadius: 8, fontSize: '1rem',
-                      cursor: 'pointer'
+                      padding: '0.75rem 2rem', borderRadius: 8, fontSize: '1rem', cursor: 'pointer'
                     }}>
                       Antwort zeigen
                     </button>
@@ -151,28 +196,20 @@ export default function App() {
               <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>
                 <p style={{ fontSize: '3rem' }}>🎉</p>
                 <h2 style={{ color: '#5c35d4' }}>Alles gelernt!</h2>
-                <p style={{ color: '#666' }}>Keine fälligen Vokabeln mehr.<br/>Komm morgen wieder!</p>
+                <p style={{ color: '#666' }}>Keine fälligen Vokabeln.<br />Komm morgen wieder!</p>
               </div>
             )}
           </>
         )}
 
-        {/* HINZUFÜGEN Ansicht */}
+        {/* HINZUFÜGEN */}
         {ansicht === 'hinzufuegen' && (
           <div>
             <h2 style={{ color: '#5c35d4', marginBottom: '1.5rem' }}>Neue Vokabel</h2>
-            <input
-              value={neuesWort}
-              onChange={e => setNeuesWort(e.target.value)}
-              placeholder="Wort (z.B. apple)"
-              style={inputStyle}
-            />
-            <input
-              value={neueUebersetzung}
-              onChange={e => setNeueUebersetzung(e.target.value)}
-              placeholder="Übersetzung (z.B. Apfel)"
-              style={{ ...inputStyle, marginTop: '0.75rem' }}
-            />
+            <input value={neuesWort} onChange={e => setNeuesWort(e.target.value)}
+              placeholder="Wort (z.B. apple)" style={inputStyle} />
+            <input value={neueUebersetzung} onChange={e => setNeueUebersetzung(e.target.value)}
+              placeholder="Übersetzung (z.B. Apfel)" style={{ ...inputStyle, marginTop: '0.75rem' }} />
             <button onClick={vokabelHinzufuegen} style={{
               width: '100%', marginTop: '1rem', padding: '0.9rem',
               background: '#5c35d4', color: 'white', border: 'none',
@@ -181,6 +218,42 @@ export default function App() {
               ➕ Vokabel speichern
             </button>
             {status && <p style={{ textAlign: 'center', marginTop: '1rem', color: 'green' }}>{status}</p>}
+          </div>
+        )}
+
+        {/* EINSTELLUNGEN */}
+        {ansicht === 'einstellungen' && (
+          <div>
+            <h2 style={{ color: '#5c35d4', marginBottom: '1.5rem' }}>⚙️ Einstellungen</h2>
+            <div style={{ background: 'white', borderRadius: 12, padding: '1.2rem', boxShadow: '0 2px 8px rgba(0,0,0,0.07)' }}>
+              <h3 style={{ margin: '0 0 0.5rem', fontSize: '1rem' }}>🔔 Benachrichtigungen</h3>
+              <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>
+                {notifAktiv
+                  ? 'Aktiv — du wirst an fällige Vokabeln erinnert.'
+                  : 'Nicht aktiv — aktiviere sie um Erinnerungen zu bekommen.'}
+              </p>
+              {!notifAktiv && (
+                <button onClick={handleNotifAktivieren} style={{
+                  width: '100%', padding: '0.8rem', background: '#5c35d4',
+                  color: 'white', border: 'none', borderRadius: 8,
+                  fontSize: '1rem', cursor: 'pointer', fontWeight: 'bold'
+                }}>
+                  🔔 Jetzt aktivieren
+                </button>
+              )}
+              {notifAktiv && (
+                <div style={{ background: '#e8f5e9', borderRadius: 8, padding: '0.7rem', textAlign: 'center', color: '#2e7d32' }}>
+                  ✅ Notifications sind aktiv
+                </div>
+              )}
+            </div>
+
+            <div style={{ background: 'white', borderRadius: 12, padding: '1.2rem', marginTop: '1rem', boxShadow: '0 2px 8px rgba(0,0,0,0.07)' }}>
+              <h3 style={{ margin: '0 0 0.5rem', fontSize: '1rem' }}>📊 Statistik</h3>
+              <p style={{ color: '#666', fontSize: '0.9rem' }}>Gesamt: <strong>{vokabeln.length}</strong> Vokabeln</p>
+              <p style={{ color: '#666', fontSize: '0.9rem' }}>Fällig: <strong>{faellige.length}</strong> Vokabeln</p>
+              <p style={{ color: '#666', fontSize: '0.9rem' }}>Gelernt: <strong>{vokabeln.filter(v => v.wiederholungen > 0).length}</strong> Vokabeln</p>
+            </div>
           </div>
         )}
 
