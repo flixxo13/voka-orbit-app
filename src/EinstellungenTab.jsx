@@ -14,7 +14,6 @@ const ZEITEN_OPTIONEN = [
   { label: '20:00', wert: 20 },
   { label: '21:00', wert: 21 },
   { label: '22:00', wert: 22 },
-  { label: '22:20', wert: 23 },
 ]
 
 export default function EinstellungenTab({ notifAktiv, handleNotifAktivieren, vokabeln, faellige }) {
