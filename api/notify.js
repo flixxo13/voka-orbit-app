@@ -67,7 +67,13 @@ export default async function handler(req, res) {
     }
 
     // Prüfen ob jetzt eine Notification Zeit ist (±14 Minuten)
-    const istZeit = einstellungen.notifZeiten.some(z => Math.abs(z - jetztStunde) <= 0)
+
+    /* const istZeit = einstellungen.notifZeiten.some(z => Math.abs(z - jetztStunde) <= 0) */
+
+const jetztMinute = new Date().getMinutes()
+const istZeit = einstellungen.notifZeiten.some(z => 
+  z === jetztStunde && jetztMinute < 15
+)
     if (!istZeit) {
       return res.status(200).json({ message: `Nicht zur Notif-Zeit (jetzt: ${jetztStunde}:00)` })
     }
