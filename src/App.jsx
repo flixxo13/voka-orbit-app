@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { db, collection, addDoc, getDocs, messaging, aktiviereNotifications, onMessage } from './firebase'
 import { berechneNaechsteWiederholung, sindFaellig } from './fsrs'
 import { doc, updateDoc } from 'firebase/firestore'
+import EinstellungenTab from './EinstellungenTab'
 
 const FARBEN = { 1: '#e74c3c', 2: '#e67e22', 3: '#2ecc71', 4: '#3498db' }
 
@@ -14,15 +15,12 @@ export default function App() {
   const [neuesWort, setNeuesWort] = useState('')
   const [neueUebersetzung, setNeueUebersetzung] = useState('')
   const [status, setStatus] = useState('')
-  const [notifStatus, setNotifStatus] = useState('') 
+  const [notifStatus, setNotifStatus] = useState('')
   const [notifAktiv, setNotifAktiv] = useState(false)
 
   useEffect(() => {
     ladeVokabeln()
-    // Prüfen ob Notifications bereits erlaubt
     if (Notification.permission === 'granted') setNotifAktiv(true)
-    
-    // Foreground Messages empfangen
     onMessage(messaging, (payload) => {
       setStatus('🔔 ' + payload.notification.title)
     })
@@ -64,32 +62,12 @@ export default function App() {
     ladeVokabeln()
   }
 
-  /*async function handleNotifAktivieren() {
+  async function handleNotifAktivieren() {
     setNotifStatus('⏳ Wird aktiviert...')
     const token = await aktiviereNotifications()
     if (token) {
       setNotifAktiv(true)
       setNotifStatus('✅ Notifications aktiv!')
-      // Testnotification nach 5 Sekunden
-      setTimeout(() => {
-        new Notification('🚀 VokaOrbit', {
-          body: 'Notifications funktionieren! Du wirst an deine Vokabeln erinnert.',
-          icon: '/icon-192.png'
-        })
-      }, 5000)
-    } else {
-      setNotifStatus('❌ Nicht erlaubt. Bitte in Browser-Einstellungen aktivieren.')
-    }
-    setTimeout(() => setNotifStatus(''), 4000)
-  }*/
-
-async function handleNotifAktivieren() {
-    setNotifStatus('⏳ Wird aktiviert...')
-    const token = await aktiviereNotifications()
-    if (token) {
-      setNotifAktiv(true)
-      setNotifStatus('✅ Notifications aktiv!')
-      // Android-kompatibler Test über Service Worker
       setTimeout(async () => {
         const reg = await navigator.serviceWorker.ready
         reg.showNotification('🚀 VokaOrbit', {
@@ -244,38 +222,12 @@ async function handleNotifAktivieren() {
 
         {/* EINSTELLUNGEN */}
         {ansicht === 'einstellungen' && (
-          <div>
-            <h2 style={{ color: '#5c35d4', marginBottom: '1.5rem' }}>⚙️ Einstellungen</h2>
-            <div style={{ background: 'white', borderRadius: 12, padding: '1.2rem', boxShadow: '0 2px 8px rgba(0,0,0,0.07)' }}>
-              <h3 style={{ margin: '0 0 0.5rem', fontSize: '1rem' }}>🔔 Benachrichtigungen</h3>
-              <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>
-                {notifAktiv
-                  ? 'Aktiv — du wirst an fällige Vokabeln erinnert.'
-                  : 'Nicht aktiv — aktiviere sie um Erinnerungen zu bekommen.'}
-              </p>
-              {!notifAktiv && (
-                <button onClick={handleNotifAktivieren} style={{
-                  width: '100%', padding: '0.8rem', background: '#5c35d4',
-                  color: 'white', border: 'none', borderRadius: 8,
-                  fontSize: '1rem', cursor: 'pointer', fontWeight: 'bold'
-                }}>
-                  🔔 Jetzt aktivieren
-                </button>
-              )}
-              {notifAktiv && (
-                <div style={{ background: '#e8f5e9', borderRadius: 8, padding: '0.7rem', textAlign: 'center', color: '#2e7d32' }}>
-                  ✅ Notifications sind aktiv
-                </div>
-              )}
-            </div>
-
-            <div style={{ background: 'white', borderRadius: 12, padding: '1.2rem', marginTop: '1rem', boxShadow: '0 2px 8px rgba(0,0,0,0.07)' }}>
-              <h3 style={{ margin: '0 0 0.5rem', fontSize: '1rem' }}>📊 Statistik</h3>
-              <p style={{ color: '#666', fontSize: '0.9rem' }}>Gesamt: <strong>{vokabeln.length}</strong> Vokabeln</p>
-              <p style={{ color: '#666', fontSize: '0.9rem' }}>Fällig: <strong>{faellige.length}</strong> Vokabeln</p>
-              <p style={{ color: '#666', fontSize: '0.9rem' }}>Gelernt: <strong>{vokabeln.filter(v => v.wiederholungen > 0).length}</strong> Vokabeln</p>
-            </div>
-          </div>
+          <EinstellungenTab
+            notifAktiv={notifAktiv}
+            handleNotifAktivieren={handleNotifAktivieren}
+            vokabeln={vokabeln}
+            faellige={faellige}
+          />
         )}
 
       </div>
