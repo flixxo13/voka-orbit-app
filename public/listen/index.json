@@ -1,0 +1,42 @@
+[
+  {
+    "id": "en_a1",
+    "sprache": "Englisch",
+    "flagge": "🇬🇧",
+    "niveau": "A1",
+    "beschreibung": "Die wichtigsten Grundvokabeln",
+    "anzahl": 380
+  },
+  {
+    "id": "en_a2",
+    "sprache": "Englisch",
+    "flagge": "🇬🇧",
+    "niveau": "A2",
+    "beschreibung": "Alltag, Reisen & Beruf",
+    "anzahl": 382
+  },
+  {
+    "id": "en_b1",
+    "sprache": "Englisch",
+    "flagge": "🇬🇧",
+    "niveau": "B1",
+    "beschreibung": "Mittelstufe — Gesellschaft & Arbeit",
+    "anzahl": 398
+  },
+  {
+    "id": "en_b2",
+    "sprache": "Englisch",
+    "flagge": "🇬🇧",
+    "niveau": "B2",
+    "beschreibung": "Fortgeschrittene — Akademisch & Politisch",
+    "anzahl": 259
+  },
+  {
+    "id": "en_c1",
+    "sprache": "Englisch",
+    "flagge": "🇬🇧",
+    "niveau": "C1",
+    "beschreibung": "Experte — Komplexe Konzepte & Nuancen",
+    "anzahl": 238
+  }
+]
