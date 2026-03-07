@@ -34,13 +34,3 @@ export async function speichereEinstellungen(daten) {
 }
 
 export { DEVICE_ID }
-src/App.jsx — Einstellungen Tab ersetzen
-Nur den Block {ansicht === 'einstellungen' && (...)} komplett ersetzen:
-{ansicht === 'einstellungen' && (
-  <EinstellungenTab
-    notifAktiv={notifAktiv}
-    handleNotifAktivieren={handleNotifAktivieren}
-    vokabeln={vokabeln}
-    faellige={faellige}
-  />
-)}
