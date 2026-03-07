@@ -38,7 +38,14 @@ export default async function handler(req, res) {
 
   try {
     const jetzt = Date.now()
-    const jetztStunde = new Date().getHours()
+
+    // Zeitzone Deutschland
+    const jetztStunde = parseInt(new Date().toLocaleString('de-DE', {
+      timeZone: 'Europe/Berlin',
+      hour: 'numeric',
+      hour12: false
+    }))
+    const jetztMinute = new Date().getMinutes()
 
     // Tokens laden
     const tokensSnap = await db.collection('fcmTokens').get()
@@ -66,16 +73,17 @@ export default async function handler(req, res) {
       einstellungen = { ...einstellungen, ...einstSnap.docs[0].data() }
     }
 
-    // Prüfen ob jetzt eine Notification Zeit ist (±14 Minuten)
+    // Prüfen ob jetzt eine Notification Zeit ist
+    // Nur beim ersten cron-Lauf pro Stunde (Minute < 15)
+    const istZeit = einstellungen.notifZeiten.some(z =>
+      z === jetztStunde && jetztMinute < 15
+    )
 
-    /* const istZeit = einstellungen.notifZeiten.some(z => Math.abs(z - jetztStunde) <= 0) */
-
-const jetztMinute = new Date().getMinutes()
-const istZeit = einstellungen.notifZeiten.some(z => 
-  z === jetztStunde && jetztMinute < 15
-)
     if (!istZeit) {
-      return res.status(200).json({ message: `Nicht zur Notif-Zeit (jetzt: ${jetztStunde}:00)` })
+      return res.status(200).json({
+        message: `Nicht zur Notif-Zeit (jetzt: ${jetztStunde}:${String(jetztMinute).padStart(2,'0')} Berliner Zeit)`,
+        notifZeiten: einstellungen.notifZeiten
+      })
     }
 
     const beispiel = waehleVokabel(faellige, einstellungen.vokabelModus)
@@ -109,7 +117,9 @@ const istZeit = einstellungen.notifZeiten.some(z =>
       faellig: anzahl,
       vokabel: beispiel.wort,
       modus: einstellungen.vokabelModus,
+      zeit: `${jetztStunde}:${String(jetztMinute).padStart(2,'0')} Berliner Zeit`
     })
+
   } catch (err) {
     console.error(err)
     return res.status(500).json({ error: err.message })
