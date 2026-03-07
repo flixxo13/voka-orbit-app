@@ -1,0 +1,1038 @@
+[
+  {
+    "wort": "abstract",
+    "uebersetzung": "abstrakt/Zusammenfassung"
+  },
+  {
+    "wort": "accumulate",
+    "uebersetzung": "ansammeln/anhäufen"
+  },
+  {
+    "wort": "acknowledge",
+    "uebersetzung": "anerkennen/bestätigen"
+  },
+  {
+    "wort": "activist",
+    "uebersetzung": "Aktivist"
+  },
+  {
+    "wort": "acute",
+    "uebersetzung": "akut/scharf"
+  },
+  {
+    "wort": "adjacent",
+    "uebersetzung": "angrenzend/benachbart"
+  },
+  {
+    "wort": "administration",
+    "uebersetzung": "Verwaltung/Administration"
+  },
+  {
+    "wort": "advocate",
+    "uebersetzung": "befürworten/Befürworter"
+  },
+  {
+    "wort": "aesthetic",
+    "uebersetzung": "ästhetisch"
+  },
+  {
+    "wort": "aggravate",
+    "uebersetzung": "verschlimmern/ärgern"
+  },
+  {
+    "wort": "align",
+    "uebersetzung": "ausrichten/angleichen"
+  },
+  {
+    "wort": "allocate",
+    "uebersetzung": "zuweisen/zuteilen"
+  },
+  {
+    "wort": "ambiguous",
+    "uebersetzung": "mehrdeutig/zweideutig"
+  },
+  {
+    "wort": "analyse",
+    "uebersetzung": "analysieren"
+  },
+  {
+    "wort": "anticipate",
+    "uebersetzung": "erwarten/vorhersehen"
+  },
+  {
+    "wort": "arbitrary",
+    "uebersetzung": "willkürlich"
+  },
+  {
+    "wort": "assert",
+    "uebersetzung": "behaupten/durchsetzen"
+  },
+  {
+    "wort": "assumption",
+    "uebersetzung": "Annahme/Voraussetzung"
+  },
+  {
+    "wort": "autonomy",
+    "uebersetzung": "Autonomie/Selbstständigkeit"
+  },
+  {
+    "wort": "benchmark",
+    "uebersetzung": "Maßstab/Benchmark"
+  },
+  {
+    "wort": "bias",
+    "uebersetzung": "Voreingenommenheit/Verzerrung"
+  },
+  {
+    "wort": "bureaucracy",
+    "uebersetzung": "Bürokratie"
+  },
+  {
+    "wort": "calculate",
+    "uebersetzung": "berechnen/kalkulieren"
+  },
+  {
+    "wort": "capacity",
+    "uebersetzung": "Kapazität/Fähigkeit"
+  },
+  {
+    "wort": "coherent",
+    "uebersetzung": "kohärent/zusammenhängend"
+  },
+  {
+    "wort": "collaborate",
+    "uebersetzung": "zusammenarbeiten"
+  },
+  {
+    "wort": "collapse",
+    "uebersetzung": "zusammenbrechen/Kollaps"
+  },
+  {
+    "wort": "commodity",
+    "uebersetzung": "Ware/Gut"
+  },
+  {
+    "wort": "compensate",
+    "uebersetzung": "kompensieren/entschädigen"
+  },
+  {
+    "wort": "competence",
+    "uebersetzung": "Kompetenz/Fähigkeit"
+  },
+  {
+    "wort": "complement",
+    "uebersetzung": "ergänzen/Ergänzung"
+  },
+  {
+    "wort": "comprehend",
+    "uebersetzung": "verstehen/begreifen"
+  },
+  {
+    "wort": "comprehensive",
+    "uebersetzung": "umfassend"
+  },
+  {
+    "wort": "compulsory",
+    "uebersetzung": "obligatorisch/Pflicht-"
+  },
+  {
+    "wort": "conceive",
+    "uebersetzung": "sich vorstellen/empfangen"
+  },
+  {
+    "wort": "concise",
+    "uebersetzung": "prägnant/knapp"
+  },
+  {
+    "wort": "conform",
+    "uebersetzung": "entsprechen/konformieren"
+  },
+  {
+    "wort": "consensus",
+    "uebersetzung": "Konsens/Einigkeit"
+  },
+  {
+    "wort": "contradictory",
+    "uebersetzung": "widersprüchlich"
+  },
+  {
+    "wort": "convey",
+    "uebersetzung": "übermitteln/ausdrücken"
+  },
+  {
+    "wort": "correlate",
+    "uebersetzung": "korrelieren/in Beziehung stehen"
+  },
+  {
+    "wort": "corruption",
+    "uebersetzung": "Korruption"
+  },
+  {
+    "wort": "critique",
+    "uebersetzung": "kritisieren/Kritik"
+  },
+  {
+    "wort": "crucial",
+    "uebersetzung": "entscheidend/wesentlich"
+  },
+  {
+    "wort": "cumulative",
+    "uebersetzung": "kumulativ/angehäuft"
+  },
+  {
+    "wort": "debate",
+    "uebersetzung": "Debatte"
+  },
+  {
+    "wort": "deficiency",
+    "uebersetzung": "Mangel/Defizit"
+  },
+  {
+    "wort": "deliberate",
+    "uebersetzung": "absichtlich/überlegen"
+  },
+  {
+    "wort": "deployment",
+    "uebersetzung": "Einsatz/Bereitstellung"
+  },
+  {
+    "wort": "derive",
+    "uebersetzung": "ableiten/herleiten"
+  },
+  {
+    "wort": "desirable",
+    "uebersetzung": "wünschenswert"
+  },
+  {
+    "wort": "deteriorate",
+    "uebersetzung": "sich verschlechtern"
+  },
+  {
+    "wort": "devastate",
+    "uebersetzung": "verwüsten/vernichten"
+  },
+  {
+    "wort": "differentiate",
+    "uebersetzung": "unterscheiden/differenzieren"
+  },
+  {
+    "wort": "dilemma",
+    "uebersetzung": "Dilemma"
+  },
+  {
+    "wort": "diminish",
+    "uebersetzung": "verringern/abnehmen"
+  },
+  {
+    "wort": "discourse",
+    "uebersetzung": "Diskurs/Abhandlung"
+  },
+  {
+    "wort": "disparity",
+    "uebersetzung": "Ungleichheit/Diskrepanz"
+  },
+  {
+    "wort": "disrupt",
+    "uebersetzung": "stören/unterbrechen"
+  },
+  {
+    "wort": "diverge",
+    "uebersetzung": "abweichen/auseinandergehen"
+  },
+  {
+    "wort": "domain",
+    "uebersetzung": "Bereich/Domäne"
+  },
+  {
+    "wort": "dynamic",
+    "uebersetzung": "dynamisch"
+  },
+  {
+    "wort": "elaborate",
+    "uebersetzung": "ausarbeiten/ausführlich"
+  },
+  {
+    "wort": "eliminate",
+    "uebersetzung": "beseitigen/eliminieren"
+  },
+  {
+    "wort": "empirical",
+    "uebersetzung": "empirisch"
+  },
+  {
+    "wort": "encounter",
+    "uebersetzung": "begegnen/Begegnung"
+  },
+  {
+    "wort": "enforce",
+    "uebersetzung": "durchsetzen/erzwingen"
+  },
+  {
+    "wort": "engage",
+    "uebersetzung": "einbeziehen/engagieren"
+  },
+  {
+    "wort": "ethical",
+    "uebersetzung": "ethisch"
+  },
+  {
+    "wort": "evolve",
+    "uebersetzung": "sich entwickeln/evolvieren"
+  },
+  {
+    "wort": "facilitate",
+    "uebersetzung": "erleichtern/unterstützen"
+  },
+  {
+    "wort": "feasible",
+    "uebersetzung": "machbar/durchführbar"
+  },
+  {
+    "wort": "fluctuate",
+    "uebersetzung": "schwanken"
+  },
+  {
+    "wort": "framework",
+    "uebersetzung": "Rahmen/Konzept"
+  },
+  {
+    "wort": "friction",
+    "uebersetzung": "Reibung/Konflikt"
+  },
+  {
+    "wort": "hierarchy",
+    "uebersetzung": "Hierarchie"
+  },
+  {
+    "wort": "holistic",
+    "uebersetzung": "holistisch/ganzheitlich"
+  },
+  {
+    "wort": "hypothesis",
+    "uebersetzung": "Hypothese"
+  },
+  {
+    "wort": "implement",
+    "uebersetzung": "umsetzen/implementieren"
+  },
+  {
+    "wort": "implication",
+    "uebersetzung": "Folgerung/Implikation"
+  },
+  {
+    "wort": "incentive",
+    "uebersetzung": "Anreiz/Ansporn"
+  },
+  {
+    "wort": "incline",
+    "uebersetzung": "neigen/Neigung"
+  },
+  {
+    "wort": "inconsistent",
+    "uebersetzung": "inkonsistent/widersprüchlich"
+  },
+  {
+    "wort": "indispensable",
+    "uebersetzung": "unentbehrlich/unverzichtbar"
+  },
+  {
+    "wort": "inherent",
+    "uebersetzung": "inhärent/innewohnend"
+  },
+  {
+    "wort": "insight",
+    "uebersetzung": "Einblick/Erkenntnis"
+  },
+  {
+    "wort": "integrity",
+    "uebersetzung": "Integrität/Ehrlichkeit"
+  },
+  {
+    "wort": "intensify",
+    "uebersetzung": "intensivieren/verstärken"
+  },
+  {
+    "wort": "intervene",
+    "uebersetzung": "eingreifen/intervenieren"
+  },
+  {
+    "wort": "intrinsic",
+    "uebersetzung": "intrinsisch/innewohnend"
+  },
+  {
+    "wort": "mandate",
+    "uebersetzung": "Mandat/beauftragen"
+  },
+  {
+    "wort": "mechanism",
+    "uebersetzung": "Mechanismus"
+  },
+  {
+    "wort": "mediate",
+    "uebersetzung": "vermitteln"
+  },
+  {
+    "wort": "merit",
+    "uebersetzung": "Verdienst/verdienen"
+  },
+  {
+    "wort": "methodology",
+    "uebersetzung": "Methodik/Methodologie"
+  },
+  {
+    "wort": "migration",
+    "uebersetzung": "Migration/Wanderung"
+  },
+  {
+    "wort": "minimize",
+    "uebersetzung": "minimieren"
+  },
+  {
+    "wort": "misconception",
+    "uebersetzung": "Missverständnis/Irrtum"
+  },
+  {
+    "wort": "moderate",
+    "uebersetzung": "moderat/mäßigen"
+  },
+  {
+    "wort": "mutual",
+    "uebersetzung": "gegenseitig"
+  },
+  {
+    "wort": "norm",
+    "uebersetzung": "Norm/Standard"
+  },
+  {
+    "wort": "notion",
+    "uebersetzung": "Vorstellung/Begriff"
+  },
+  {
+    "wort": "objective",
+    "uebersetzung": "Ziel/objektiv"
+  },
+  {
+    "wort": "obstacle",
+    "uebersetzung": "Hindernis"
+  },
+  {
+    "wort": "ongoing",
+    "uebersetzung": "fortlaufend/andauernd"
+  },
+  {
+    "wort": "optimistic",
+    "uebersetzung": "optimistisch"
+  },
+  {
+    "wort": "parameter",
+    "uebersetzung": "Parameter"
+  },
+  {
+    "wort": "perceive",
+    "uebersetzung": "wahrnehmen"
+  },
+  {
+    "wort": "phenomenon",
+    "uebersetzung": "Phänomen"
+  },
+  {
+    "wort": "pragmatic",
+    "uebersetzung": "pragmatisch"
+  },
+  {
+    "wort": "precedent",
+    "uebersetzung": "Präzedenzfall"
+  },
+  {
+    "wort": "predominantly",
+    "uebersetzung": "überwiegend/vorwiegend"
+  },
+  {
+    "wort": "prejudice",
+    "uebersetzung": "Vorurteil"
+  },
+  {
+    "wort": "prestige",
+    "uebersetzung": "Prestige/Ansehen"
+  },
+  {
+    "wort": "prevalent",
+    "uebersetzung": "vorherrschend/weit verbreitet"
+  },
+  {
+    "wort": "proactive",
+    "uebersetzung": "proaktiv"
+  },
+  {
+    "wort": "profound",
+    "uebersetzung": "tiefgreifend/tiefgründig"
+  },
+  {
+    "wort": "prohibit",
+    "uebersetzung": "verbieten"
+  },
+  {
+    "wort": "rationale",
+    "uebersetzung": "Begründung/Erklärung"
+  },
+  {
+    "wort": "regulate",
+    "uebersetzung": "regulieren"
+  },
+  {
+    "wort": "reinforce",
+    "uebersetzung": "verstärken"
+  },
+  {
+    "wort": "reluctant",
+    "uebersetzung": "widerwillig/zögernd"
+  },
+  {
+    "wort": "remedy",
+    "uebersetzung": "Abhilfe/Heilmittel"
+  },
+  {
+    "wort": "resilient",
+    "uebersetzung": "widerstandsfähig/belastbar"
+  },
+  {
+    "wort": "restrict",
+    "uebersetzung": "einschränken/beschränken"
+  },
+  {
+    "wort": "retain",
+    "uebersetzung": "behalten/beibehalten"
+  },
+  {
+    "wort": "revenue",
+    "uebersetzung": "Einnahmen/Umsatz"
+  },
+  {
+    "wort": "rigorous",
+    "uebersetzung": "streng/rigoros"
+  },
+  {
+    "wort": "scope",
+    "uebersetzung": "Umfang/Reichweite"
+  },
+  {
+    "wort": "scrutiny",
+    "uebersetzung": "Prüfung/genaue Untersuchung"
+  },
+  {
+    "wort": "solidarity",
+    "uebersetzung": "Solidarität"
+  },
+  {
+    "wort": "sophisticated",
+    "uebersetzung": "anspruchsvoll/ausgefeilt"
+  },
+  {
+    "wort": "stimulus",
+    "uebersetzung": "Stimulus/Anreiz"
+  },
+  {
+    "wort": "subordinate",
+    "uebersetzung": "untergeordnet/Untergebene"
+  },
+  {
+    "wort": "subsidy",
+    "uebersetzung": "Subvention"
+  },
+  {
+    "wort": "subtle",
+    "uebersetzung": "subtil/fein"
+  },
+  {
+    "wort": "suppress",
+    "uebersetzung": "unterdrücken"
+  },
+  {
+    "wort": "surplus",
+    "uebersetzung": "Überschuss"
+  },
+  {
+    "wort": "sustain",
+    "uebersetzung": "aufrechterhalten/stützen"
+  },
+  {
+    "wort": "symbolic",
+    "uebersetzung": "symbolisch"
+  },
+  {
+    "wort": "synthesize",
+    "uebersetzung": "synthetisieren/zusammenfassen"
+  },
+  {
+    "wort": "tactful",
+    "uebersetzung": "taktvoll"
+  },
+  {
+    "wort": "tangible",
+    "uebersetzung": "greifbar/konkret"
+  },
+  {
+    "wort": "terminology",
+    "uebersetzung": "Terminologie/Fachsprache"
+  },
+  {
+    "wort": "testimony",
+    "uebersetzung": "Zeugnis/Aussage"
+  },
+  {
+    "wort": "thoroughly",
+    "uebersetzung": "gründlich/vollständig"
+  },
+  {
+    "wort": "transition",
+    "uebersetzung": "Übergang/Transition"
+  },
+  {
+    "wort": "undertake",
+    "uebersetzung": "unternehmen/übernehmen"
+  },
+  {
+    "wort": "utilize",
+    "uebersetzung": "nutzen/verwenden"
+  },
+  {
+    "wort": "validate",
+    "uebersetzung": "validieren/bestätigen"
+  },
+  {
+    "wort": "viable",
+    "uebersetzung": "machbar/lebensfähig"
+  },
+  {
+    "wort": "voluntary",
+    "uebersetzung": "freiwillig"
+  },
+  {
+    "wort": "abundant",
+    "uebersetzung": "reichlich/üppig"
+  },
+  {
+    "wort": "aggression",
+    "uebersetzung": "Aggression"
+  },
+  {
+    "wort": "alienate",
+    "uebersetzung": "entfremden"
+  },
+  {
+    "wort": "allegation",
+    "uebersetzung": "Behauptung/Anschuldigung"
+  },
+  {
+    "wort": "ambivalent",
+    "uebersetzung": "ambivalent/zwiespältig"
+  },
+  {
+    "wort": "anarchism",
+    "uebersetzung": "Anarchismus"
+  },
+  {
+    "wort": "annex",
+    "uebersetzung": "annektieren/Annex"
+  },
+  {
+    "wort": "anomaly",
+    "uebersetzung": "Anomalie/Abweichung"
+  },
+  {
+    "wort": "anthropology",
+    "uebersetzung": "Anthropologie"
+  },
+  {
+    "wort": "austerity",
+    "uebersetzung": "Sparsamkeit/Austerität"
+  },
+  {
+    "wort": "breakthrough",
+    "uebersetzung": "Durchbruch"
+  },
+  {
+    "wort": "bureaucrat",
+    "uebersetzung": "Bürokrat"
+  },
+  {
+    "wort": "catalyst",
+    "uebersetzung": "Katalysator"
+  },
+  {
+    "wort": "censorship",
+    "uebersetzung": "Zensur"
+  },
+  {
+    "wort": "charisma",
+    "uebersetzung": "Charisma"
+  },
+  {
+    "wort": "circulation",
+    "uebersetzung": "Umlauf/Kreislauf"
+  },
+  {
+    "wort": "coercive",
+    "uebersetzung": "zwingend/Zwangs-"
+  },
+  {
+    "wort": "collective",
+    "uebersetzung": "kollektiv/Kollektiv"
+  },
+  {
+    "wort": "concealment",
+    "uebersetzung": "Verbergen/Verschleierung"
+  },
+  {
+    "wort": "conception",
+    "uebersetzung": "Konzeption/Vorstellung"
+  },
+  {
+    "wort": "concurrent",
+    "uebersetzung": "gleichzeitig/parallel"
+  },
+  {
+    "wort": "condemnation",
+    "uebersetzung": "Verurteilung/Verdammung"
+  },
+  {
+    "wort": "constitutional",
+    "uebersetzung": "konstitutionell/verfassungsmäßig"
+  },
+  {
+    "wort": "contemplation",
+    "uebersetzung": "Kontemplation/Nachdenken"
+  },
+  {
+    "wort": "contradiction",
+    "uebersetzung": "Widerspruch"
+  },
+  {
+    "wort": "controversy",
+    "uebersetzung": "Kontroverse/Streit"
+  },
+  {
+    "wort": "conviction",
+    "uebersetzung": "Überzeugung/Verurteilung"
+  },
+  {
+    "wort": "credibility",
+    "uebersetzung": "Glaubwürdigkeit"
+  },
+  {
+    "wort": "culminate",
+    "uebersetzung": "gipfeln/enden in"
+  },
+  {
+    "wort": "cynical",
+    "uebersetzung": "zynisch"
+  },
+  {
+    "wort": "decisive",
+    "uebersetzung": "entscheidend/entschlossen"
+  },
+  {
+    "wort": "democracy",
+    "uebersetzung": "Demokratie"
+  },
+  {
+    "wort": "demographic",
+    "uebersetzung": "demografisch/demographisch"
+  },
+  {
+    "wort": "depletion",
+    "uebersetzung": "Erschöpfung/Verringerung"
+  },
+  {
+    "wort": "deprivation",
+    "uebersetzung": "Entbehrung/Benachteiligung"
+  },
+  {
+    "wort": "derive",
+    "uebersetzung": "ableiten"
+  },
+  {
+    "wort": "destabilize",
+    "uebersetzung": "destabilisieren"
+  },
+  {
+    "wort": "dialogue",
+    "uebersetzung": "Dialog"
+  },
+  {
+    "wort": "dichotomy",
+    "uebersetzung": "Dichotomie/Zweiteilung"
+  },
+  {
+    "wort": "diplomatic",
+    "uebersetzung": "diplomatisch"
+  },
+  {
+    "wort": "disciplinary",
+    "uebersetzung": "disziplinarisch"
+  },
+  {
+    "wort": "disproportionate",
+    "uebersetzung": "unverhältnismäßig"
+  },
+  {
+    "wort": "distinction",
+    "uebersetzung": "Unterschied/Auszeichnung"
+  },
+  {
+    "wort": "dominance",
+    "uebersetzung": "Dominanz/Vorherrschaft"
+  },
+  {
+    "wort": "dysfunction",
+    "uebersetzung": "Dysfunktion"
+  },
+  {
+    "wort": "ecological",
+    "uebersetzung": "ökologisch"
+  },
+  {
+    "wort": "ideology",
+    "uebersetzung": "Ideologie"
+  },
+  {
+    "wort": "infrastructure",
+    "uebersetzung": "Infrastruktur"
+  },
+  {
+    "wort": "intellectual",
+    "uebersetzung": "intellektuell/Intellektueller"
+  },
+  {
+    "wort": "legitimate",
+    "uebersetzung": "legitim/rechtmäßig"
+  },
+  {
+    "wort": "liberalism",
+    "uebersetzung": "Liberalismus"
+  },
+  {
+    "wort": "manipulation",
+    "uebersetzung": "Manipulation"
+  },
+  {
+    "wort": "marginalise",
+    "uebersetzung": "marginalisieren"
+  },
+  {
+    "wort": "mobilise",
+    "uebersetzung": "mobilisieren"
+  },
+  {
+    "wort": "momentum",
+    "uebersetzung": "Schwung/Dynamik"
+  },
+  {
+    "wort": "monopoly",
+    "uebersetzung": "Monopol"
+  },
+  {
+    "wort": "narrative",
+    "uebersetzung": "Erzählung/Narrativ"
+  },
+  {
+    "wort": "obsolete",
+    "uebersetzung": "veraltet/überholt"
+  },
+  {
+    "wort": "oppression",
+    "uebersetzung": "Unterdrückung"
+  },
+  {
+    "wort": "paradigm",
+    "uebersetzung": "Paradigma"
+  },
+  {
+    "wort": "paradox",
+    "uebersetzung": "Paradox"
+  },
+  {
+    "wort": "partisan",
+    "uebersetzung": "parteiisch/Partisan"
+  },
+  {
+    "wort": "paternal",
+    "uebersetzung": "väterlich/paternalistisch"
+  },
+  {
+    "wort": "perception",
+    "uebersetzung": "Wahrnehmung"
+  },
+  {
+    "wort": "periphery",
+    "uebersetzung": "Peripherie/Rand"
+  },
+  {
+    "wort": "perpetuate",
+    "uebersetzung": "aufrechterhalten/verewigen"
+  },
+  {
+    "wort": "philanthropy",
+    "uebersetzung": "Philanthropie"
+  },
+  {
+    "wort": "pluralism",
+    "uebersetzung": "Pluralismus"
+  },
+  {
+    "wort": "polarize",
+    "uebersetzung": "polarisieren"
+  },
+  {
+    "wort": "postulate",
+    "uebersetzung": "postulieren/Postulat"
+  },
+  {
+    "wort": "precarious",
+    "uebersetzung": "prekär/unsicher"
+  },
+  {
+    "wort": "proliferate",
+    "uebersetzung": "sich vermehren/verbreiten"
+  },
+  {
+    "wort": "propaganda",
+    "uebersetzung": "Propaganda"
+  },
+  {
+    "wort": "protocol",
+    "uebersetzung": "Protokoll"
+  },
+  {
+    "wort": "provoke",
+    "uebersetzung": "provozieren"
+  },
+  {
+    "wort": "proximity",
+    "uebersetzung": "Nähe"
+  },
+  {
+    "wort": "psyche",
+    "uebersetzung": "Psyche"
+  },
+  {
+    "wort": "racism",
+    "uebersetzung": "Rassismus"
+  },
+  {
+    "wort": "radical",
+    "uebersetzung": "radikal"
+  },
+  {
+    "wort": "ratification",
+    "uebersetzung": "Ratifizierung"
+  },
+  {
+    "wort": "reactionary",
+    "uebersetzung": "reaktionär"
+  },
+  {
+    "wort": "recession",
+    "uebersetzung": "Rezession"
+  },
+  {
+    "wort": "reconcile",
+    "uebersetzung": "versöhnen/in Einklang bringen"
+  },
+  {
+    "wort": "redistribute",
+    "uebersetzung": "umverteilen"
+  },
+  {
+    "wort": "referendum",
+    "uebersetzung": "Referendum/Volksabstimmung"
+  },
+  {
+    "wort": "repression",
+    "uebersetzung": "Repression/Unterdrückung"
+  },
+  {
+    "wort": "rhetoric",
+    "uebersetzung": "Rhetorik"
+  },
+  {
+    "wort": "sanction",
+    "uebersetzung": "Sanktion"
+  },
+  {
+    "wort": "secularism",
+    "uebersetzung": "Säkularismus"
+  },
+  {
+    "wort": "segregation",
+    "uebersetzung": "Segregation/Trennung"
+  },
+  {
+    "wort": "sovereignty",
+    "uebersetzung": "Souveränität"
+  },
+  {
+    "wort": "speculation",
+    "uebersetzung": "Spekulation"
+  },
+  {
+    "wort": "stigma",
+    "uebersetzung": "Stigma/Makel"
+  },
+  {
+    "wort": "strategic",
+    "uebersetzung": "strategisch"
+  },
+  {
+    "wort": "subjectivity",
+    "uebersetzung": "Subjektivität"
+  },
+  {
+    "wort": "supremacy",
+    "uebersetzung": "Vorherrschaft/Suprematie"
+  },
+  {
+    "wort": "surveillance",
+    "uebersetzung": "Überwachung"
+  },
+  {
+    "wort": "totalitarian",
+    "uebersetzung": "totalitär"
+  },
+  {
+    "wort": "trajectory",
+    "uebersetzung": "Verlauf/Trajektorie"
+  },
+  {
+    "wort": "transgress",
+    "uebersetzung": "überschreiten/verstoßen"
+  },
+  {
+    "wort": "transparency",
+    "uebersetzung": "Transparenz"
+  },
+  {
+    "wort": "tribalism",
+    "uebersetzung": "Tribalismus/Stammesdenken"
+  },
+  {
+    "wort": "tyranny",
+    "uebersetzung": "Tyrannei"
+  },
+  {
+    "wort": "unilateral",
+    "uebersetzung": "einseitig/unilateral"
+  },
+  {
+    "wort": "utopian",
+    "uebersetzung": "utopisch"
+  },
+  {
+    "wort": "vindicate",
+    "uebersetzung": "rechtfertigen/bestätigen"
+  },
+  {
+    "wort": "xenophobia",
+    "uebersetzung": "Fremdenfeindlichkeit/Xenophobie"
+  }
+]
