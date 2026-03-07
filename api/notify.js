@@ -2,7 +2,6 @@ import { initializeApp, cert, getApps } from 'firebase-admin/app'
 import { getFirestore } from 'firebase-admin/firestore'
 import { getMessaging } from 'firebase-admin/messaging'
 
-// Firebase Admin initialisieren
 if (!getApps().length) {
   initializeApp({
     credential: cert({
@@ -16,47 +15,78 @@ if (!getApps().length) {
 const db = getFirestore()
 const messaging = getMessaging()
 
-export default async function handler(req, res) {
-  // Sicherheit: nur GET erlauben
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' })
+function waehleVokabel(faellige, modus) {
+  if (faellige.length === 0) return null
+  if (modus === 'zufaellig') {
+    return faellige[Math.floor(Math.random() * faellige.length)].data()
   }
+  if (modus === 'schwerste') {
+    return faellige.sort((a, b) =>
+      (a.data().stabilitaet || 99) - (b.data().stabilitaet || 99)
+    )[0].data()
+  }
+  if (modus === 'ueberfaelligste') {
+    return faellige.sort((a, b) =>
+      (a.data().naechsteFaelligkeit || 0) - (b.data().naechsteFaelligkeit || 0)
+    )[0].data()
+  }
+  return faellige[0].data()
+}
+
+export default async function handler(req, res) {
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
   try {
     const jetzt = Date.now()
+    const jetztStunde = new Date().getHours()
 
-    // Alle Vokabeln laden
+    // Tokens laden
+    const tokensSnap = await db.collection('fcmTokens').get()
+    if (tokensSnap.empty) return res.status(200).json({ message: 'Keine Tokens' })
+
+    // Einstellungen laden
+    const einstSnap = await db.collection('einstellungen').get()
+
+    // Vokabeln laden
     const vokabelnSnap = await db.collection('vokabeln').get()
-    const faelligeVokabeln = vokabelnSnap.docs.filter(doc => {
-      const data = doc.data()
-      return !data.naechsteFaelligkeit || data.naechsteFaelligkeit <= jetzt
+    const faellige = vokabelnSnap.docs.filter(doc => {
+      const d = doc.data()
+      return !d.naechsteFaelligkeit || d.naechsteFaelligkeit <= jetzt
     })
 
-    if (faelligeVokabeln.length === 0) {
-      return res.status(200).json({ message: 'Keine fälligen Vokabeln' })
+    if (faellige.length === 0) return res.status(200).json({ message: 'Keine fälligen Vokabeln' })
+
+    // Standard Einstellungen
+    let einstellungen = {
+      notifZeiten: [8, 12, 18],
+      vokabelModus: 'schwerste',
     }
 
-    // Alle FCM Tokens laden
-    const tokensSnap = await db.collection('fcmTokens').get()
-    if (tokensSnap.empty) {
-      return res.status(200).json({ message: 'Keine Tokens vorhanden' })
+    if (!einstSnap.empty) {
+      einstellungen = { ...einstellungen, ...einstSnap.docs[0].data() }
     }
 
-    const tokens = tokensSnap.docs.map(doc => doc.data().token).filter(Boolean)
-    const anzahl = faelligeVokabeln.length
-    const beispiel = faelligeVokabeln[0].data()
+    // Prüfen ob jetzt eine Notification Zeit ist (±14 Minuten)
+    const istZeit = einstellungen.notifZeiten.some(z => Math.abs(z - jetztStunde) <= 0)
+    if (!istZeit) {
+      return res.status(200).json({ message: `Nicht zur Notif-Zeit (jetzt: ${jetztStunde}:00)` })
+    }
 
-    // Notification senden
+    const beispiel = waehleVokabel(faellige, einstellungen.vokabelModus)
+    const anzahl = faellige.length
+    const tokens = tokensSnap.docs.map(d => d.data().token).filter(Boolean)
+    const uniqueTokens = [...new Set(tokens)]
+
     const ergebnisse = await Promise.allSettled(
-      tokens.map(token =>
+      uniqueTokens.map(token =>
         messaging.send({
           token,
           notification: {
             title: `🚀 VokaOrbit — ${anzahl} Vokabel${anzahl > 1 ? 'n' : ''} fällig!`,
-            body: `Z.B. "${beispiel.wort}" — Jetzt lernen!`,
+            body: `${beispiel.wort} = ${beispiel.uebersetzung}`,
           },
           webpush: {
-            fcmOptions: { link: '/' },
+            fcmOptions: { link: 'https://voka-orbit-app.vercel.app' },
             notification: {
               icon: '/icon-192.png',
               badge: '/icon-192.png',
@@ -68,14 +98,14 @@ export default async function handler(req, res) {
     )
 
     const erfolgreich = ergebnisse.filter(r => r.status === 'fulfilled').length
-    const fehlgeschlagen = ergebnisse.filter(r => r.status === 'rejected').length
-
     return res.status(200).json({
-      message: `${erfolgreich} Notifications gesendet, ${fehlgeschlagen} fehlgeschlagen`,
+      message: `${erfolgreich} Notifications gesendet`,
       faellig: anzahl,
+      vokabel: beispiel.wort,
+      modus: einstellungen.vokabelModus,
     })
   } catch (err) {
-    console.error('Notify Fehler:', err)
+    console.error(err)
     return res.status(500).json({ error: err.message })
   }
 }
