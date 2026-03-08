@@ -1,242 +1,328 @@
 import { useState, useEffect } from 'react'
-import { db, collection, addDoc, getDocs, messaging, aktiviereNotifications, onMessage } from './firebase'
-import { berechneNaechsteWiederholung, sindFaellig } from './fsrs'
-import { doc, updateDoc } from 'firebase/firestore'
-import EinstellungenTab from './EinstellungenTab'
+import { ladeEinstellungen } from './einstellungen'
+import { aktiviereNotifications } from './firebase'
+import { ladeAlleKarten } from './vokabeln'
+import { sindFaellig } from './fsrs'
 
-const FARBEN = { 1: '#e74c3c', 2: '#e67e22', 3: '#2ecc71', 4: '#3498db' }
+import Onboarding from './components/Onboarding'
+import LernenTab from './tabs/LernenTab'
+import NeuTab from './tabs/NeuTab'
+import EntdeckenTab from './tabs/EntdeckenTab'
+import EinstellungenTab from './tabs/EinstellungenTab'
+
+const TABS = [
+  { id: 'lernen',       label: 'Lernen',     icon: '🧠' },
+  { id: 'neu',          label: 'Neu',        icon: '➕' },
+  { id: 'entdecken',    label: 'Entdecken',  icon: '📚' },
+  { id: 'einstellungen',label: 'Einst.',     icon: '⚙️' },
+]
 
 export default function App() {
-  const [ansicht, setAnsicht] = useState('lernen')
-  const [vokabeln, setVokabeln] = useState([])
-  const [faellige, setFaellige] = useState([])
-  const [aktuelleKarte, setAktuelleKarte] = useState(null)
-  const [zeigeAntwort, setZeigeAntwort] = useState(false)
-  const [neuesWort, setNeuesWort] = useState('')
-  const [neueUebersetzung, setNeueUebersetzung] = useState('')
-  const [status, setStatus] = useState('')
-  const [notifStatus, setNotifStatus] = useState('')
+  const [einstellungen, setEinstellungen] = useState(null)
+  const [aktuellerTab, setAktuellerTab] = useState('lernen')
   const [notifAktiv, setNotifAktiv] = useState(false)
+  const [statistik, setStatistik] = useState({ gesamt: 0, faellig: 0, gelernt: 0 })
+  const [faelligAnzahl, setFaelligAnzahl] = useState(0)
+  const [laden, setLaden] = useState(true)
 
+  // App initialisieren
   useEffect(() => {
-    ladeVokabeln()
-    if (Notification.permission === 'granted') setNotifAktiv(true)
-    onMessage(messaging, (payload) => {
-      setStatus('🔔 ' + payload.notification.title)
-    })
+    async function init() {
+      const einst = await ladeEinstellungen()
+      setEinstellungen(einst)
+      setNotifAktiv(Notification.permission === 'granted')
+      setLaden(false)
+    }
+    init()
   }, [])
 
-  async function ladeVokabeln() {
-    const snapshot = await getDocs(collection(db, 'vokabeln'))
-    const liste = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-    setVokabeln(liste)
-    const faelligeListe = sindFaellig(liste)
-    setFaellige(faelligeListe)
-    if (faelligeListe.length > 0) setAktuelleKarte(faelligeListe[0])
-  }
+  // Statistik laden wenn Einstellungen bereit
+  useEffect(() => {
+    if (!einstellungen?.onboardingAbgeschlossen) return
+    ladeStatistik()
+  }, [einstellungen?.aktiveListen, einstellungen?.lernrichtung])
 
-  async function bewerteKarte(bewertung) {
-    const updates = berechneNaechsteWiederholung(aktuelleKarte, bewertung)
-    await updateDoc(doc(db, 'vokabeln', aktuelleKarte.id), updates)
-    setZeigeAntwort(false)
-    const naechste = faellige.filter(v => v.id !== aktuelleKarte.id)
-    setFaellige(naechste)
-    setAktuelleKarte(naechste.length > 0 ? naechste[0] : null)
-  }
+  async function ladeStatistik() {
+    try {
+      const { alleKarten, lernkarten } = await ladeAlleKarten(
+        einstellungen.aktiveListen ?? ['en_a1'],
+        einstellungen.lernrichtung ?? 'smart'
+      )
+      const faellig = sindFaellig(lernkarten, einstellungen.lernrichtung ?? 'smart')
+      const gelernt = alleKarten.filter(k =>
+        k.profil_en_de?.wiederholungen > 0 ||
+        k.profil_de_en?.wiederholungen > 0 ||
+        k.profil_abwechselnd?.wiederholungen > 0
+      ).length
 
-  async function vokabelHinzufuegen() {
-    if (!neuesWort.trim() || !neueUebersetzung.trim()) return
-    await addDoc(collection(db, 'vokabeln'), {
-      wort: neuesWort.trim(),
-      uebersetzung: neueUebersetzung.trim(),
-      erstellt: Date.now(),
-      intervall: 0,
-      wiederholungen: 0,
-      stabilitaet: 1,
-      naechsteFaelligkeit: Date.now()
-    })
-    setNeuesWort('')
-    setNeueUebersetzung('')
-    setStatus('✅ Gespeichert!')
-    setTimeout(() => setStatus(''), 2000)
-    ladeVokabeln()
+      setStatistik({
+        gesamt: alleKarten.length,
+        faellig: faellig.length,
+        gelernt,
+      })
+      setFaelligAnzahl(faellig.length)
+    } catch (err) {
+      console.error('Statistik-Fehler:', err)
+    }
   }
 
   async function handleNotifAktivieren() {
-    setNotifStatus('⏳ Wird aktiviert...')
     const token = await aktiviereNotifications()
-    if (token) {
-      setNotifAktiv(true)
-      setNotifStatus('✅ Notifications aktiv!')
-      setTimeout(async () => {
-        const reg = await navigator.serviceWorker.ready
-        reg.showNotification('🚀 VokaOrbit', {
-          body: 'Super! Du wirst ab jetzt an fällige Vokabeln erinnert.',
-          icon: '/icon-192.png',
-          vibrate: [200, 100, 200]
-        })
-      }, 3000)
-    } else {
-      setNotifStatus('❌ Nicht erlaubt. Bitte in Browser-Einstellungen aktivieren.')
-    }
-    setTimeout(() => setNotifStatus(''), 4000)
+    if (token) setNotifAktiv(true)
   }
 
+  function handleEinstellungenAktualisieren(neu) {
+    setEinstellungen(neu)
+  }
+
+  // Onboarding abschließen
+  function handleOnboardingAbschluss(ersteEinst) {
+    setEinstellungen(prev => ({
+      ...prev,
+      ...ersteEinst,
+      onboardingAbgeschlossen: true,
+    }))
+  }
+
+  // Ladescreen
+  if (laden) {
+    return (
+      <div style={styles.ladeScreen}>
+        <div style={styles.ladeInhalt}>
+          <div style={styles.ladeLogo}>🚀</div>
+          <p style={styles.ladeName}>VokaOrbit</p>
+          <div style={styles.ladeSpinner} />
+        </div>
+        <style>{spinnerCSS}</style>
+      </div>
+    )
+  }
+
+  // Onboarding
+  if (!einstellungen?.onboardingAbgeschlossen) {
+    return (
+      <>
+        <Onboarding onAbschluss={handleOnboardingAbschluss} />
+        <style>{spinnerCSS}</style>
+      </>
+    )
+  }
+
+  // Hauptapp
   return (
-    <div style={{ maxWidth: 480, margin: '0 auto', fontFamily: 'system-ui', minHeight: '100vh', background: '#f0eeff' }}>
+    <div style={styles.app}>
+      <style>{spinnerCSS}</style>
 
-      {/* Header */}
-      <div style={{ background: '#5c35d4', padding: '1.2rem', color: 'white' }}>
-        <h1 style={{ margin: 0, fontSize: '1.5rem' }}>🚀 VokaOrbit</h1>
-        <p style={{ margin: '0.2rem 0 0', opacity: 0.8, fontSize: '0.9rem' }}>
-          {faellige.length} fällig · {vokabeln.length} gesamt
-        </p>
-      </div>
-
-      {/* Notification Banner */}
-      {!notifAktiv && (
-        <div style={{
-          background: '#fff3cd', padding: '0.9rem 1.2rem',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          borderBottom: '1px solid #ffc107'
-        }}>
-          <span style={{ fontSize: '0.9rem', color: '#856404' }}>
-            🔔 Aktiviere Erinnerungen!
-          </span>
-          <button onClick={handleNotifAktivieren} style={{
-            background: '#ffc107', border: 'none', borderRadius: 6,
-            padding: '0.4rem 0.9rem', cursor: 'pointer', fontWeight: 'bold',
-            fontSize: '0.85rem'
-          }}>
-            Aktivieren
-          </button>
-        </div>
-      )}
-      {notifStatus && (
-        <div style={{ background: '#e8f5e9', padding: '0.7rem 1.2rem', fontSize: '0.9rem', color: '#2e7d32' }}>
-          {notifStatus}
-        </div>
-      )}
-
-      {/* Navigation */}
-      <div style={{ display: 'flex', background: 'white', borderBottom: '2px solid #eee' }}>
-        {['lernen', 'hinzufuegen', 'einstellungen'].map(a => (
-          <button key={a} onClick={() => setAnsicht(a)} style={{
-            flex: 1, padding: '0.8rem', border: 'none', cursor: 'pointer',
-            background: ansicht === a ? '#f0eeff' : 'white',
-            color: ansicht === a ? '#5c35d4' : '#666',
-            fontWeight: ansicht === a ? 'bold' : 'normal',
-            borderBottom: ansicht === a ? '2px solid #5c35d4' : '2px solid transparent',
-            fontSize: '0.85rem'
-          }}>
-            {a === 'lernen' ? '🧠 Lernen' : a === 'hinzufuegen' ? '➕ Neu' : '⚙️ Einst.'}
-          </button>
-        ))}
-      </div>
-
-      <div style={{ padding: '1.5rem' }}>
-
-        {/* LERNEN */}
-        {ansicht === 'lernen' && (
-          <>
-            {aktuelleKarte ? (
-              <div>
-                <div style={{
-                  background: 'white', borderRadius: 16, padding: '2rem',
-                  textAlign: 'center', boxShadow: '0 2px 12px rgba(0,0,0,0.1)',
-                  minHeight: 200, display: 'flex', flexDirection: 'column',
-                  alignItems: 'center', justifyContent: 'center'
-                }}>
-                  <p style={{ color: '#999', fontSize: '0.8rem', marginBottom: '0.5rem' }}>
-                    Was bedeutet...
-                  </p>
-                  <h2 style={{ fontSize: '2rem', color: '#5c35d4', margin: '0 0 1rem' }}>
-                    {aktuelleKarte.wort}
-                  </h2>
-                  {zeigeAntwort ? (
-                    <p style={{ fontSize: '1.4rem', color: '#333' }}>
-                      {aktuelleKarte.uebersetzung}
-                    </p>
-                  ) : (
-                    <button onClick={() => setZeigeAntwort(true)} style={{
-                      background: '#5c35d4', color: 'white', border: 'none',
-                      padding: '0.75rem 2rem', borderRadius: 8, fontSize: '1rem', cursor: 'pointer'
-                    }}>
-                      Antwort zeigen
-                    </button>
-                  )}
-                </div>
-
-                {zeigeAntwort && (
-                  <div style={{ marginTop: '1.5rem' }}>
-                    <p style={{ textAlign: 'center', color: '#666', marginBottom: '0.75rem' }}>
-                      Wie gut wusstest du es?
-                    </p>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                      {[
-                        { wert: 1, label: '😰 Nochmal' },
-                        { wert: 2, label: '😕 Schwer' },
-                        { wert: 3, label: '🙂 Gut' },
-                        { wert: 4, label: '😄 Leicht' },
-                      ].map(b => (
-                        <button key={b.wert} onClick={() => bewerteKarte(b.wert)} style={{
-                          padding: '0.85rem', border: 'none', borderRadius: 10,
-                          background: FARBEN[b.wert], color: 'white',
-                          fontSize: '1rem', cursor: 'pointer', fontWeight: 'bold'
-                        }}>
-                          {b.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>
-                <p style={{ fontSize: '3rem' }}>🎉</p>
-                <h2 style={{ color: '#5c35d4' }}>Alles gelernt!</h2>
-                <p style={{ color: '#666' }}>Keine fälligen Vokabeln.<br />Komm morgen wieder!</p>
-              </div>
-            )}
-          </>
-        )}
-
-        {/* HINZUFÜGEN */}
-        {ansicht === 'hinzufuegen' && (
+      {/* ── Header ── */}
+      <header style={styles.header}>
+        <div style={styles.headerInhalt}>
           <div>
-            <h2 style={{ color: '#5c35d4', marginBottom: '1.5rem' }}>Neue Vokabel</h2>
-            <input value={neuesWort} onChange={e => setNeuesWort(e.target.value)}
-              placeholder="Wort (z.B. apple)" style={inputStyle} />
-            <input value={neueUebersetzung} onChange={e => setNeueUebersetzung(e.target.value)}
-              placeholder="Übersetzung (z.B. Apfel)" style={{ ...inputStyle, marginTop: '0.75rem' }} />
-            <button onClick={vokabelHinzufuegen} style={{
-              width: '100%', marginTop: '1rem', padding: '0.9rem',
-              background: '#5c35d4', color: 'white', border: 'none',
-              borderRadius: 10, fontSize: '1rem', cursor: 'pointer', fontWeight: 'bold'
-            }}>
-              ➕ Vokabel speichern
-            </button>
-            {status && <p style={{ textAlign: 'center', marginTop: '1rem', color: 'green' }}>{status}</p>}
+            <h1 style={styles.headerTitel}>🚀 VokaOrbit</h1>
+            <p style={styles.headerUntertitel}>
+              {faelligAnzahl > 0
+                ? `${faelligAnzahl} ${faelligAnzahl === 1 ? 'Karte' : 'Karten'} fällig`
+                : 'Alles auf dem neuesten Stand ✓'}
+            </p>
           </div>
-        )}
+          {faelligAnzahl > 0 && (
+            <div style={styles.faelligBadge}>
+              {faelligAnzahl}
+            </div>
+          )}
+        </div>
+      </header>
 
-        {/* EINSTELLUNGEN */}
-        {ansicht === 'einstellungen' && (
-          <EinstellungenTab
-            notifAktiv={notifAktiv}
-            handleNotifAktivieren={handleNotifAktivieren}
-            vokabeln={vokabeln}
-            faellige={faellige}
+      {/* ── Tab-Inhalt ── */}
+      <main style={styles.main}>
+        {aktuellerTab === 'lernen' && (
+          <LernenTab
+            einstellungen={einstellungen}
+            onSessionEnde={ladeStatistik}
           />
         )}
+        {aktuellerTab === 'neu' && (
+          <NeuTab />
+        )}
+        {aktuellerTab === 'entdecken' && (
+          <EntdeckenTab
+            einstellungen={einstellungen}
+            setEinstellungen={handleEinstellungenAktualisieren}
+          />
+        )}
+        {aktuellerTab === 'einstellungen' && (
+          <EinstellungenTab
+            einstellungen={einstellungen}
+            setEinstellungen={handleEinstellungenAktualisieren}
+            notifAktiv={notifAktiv}
+            handleNotifAktivieren={handleNotifAktivieren}
+            statistik={statistik}
+          />
+        )}
+      </main>
 
-      </div>
+      {/* ── Bottom Navigation ── */}
+      <nav style={styles.nav}>
+        {TABS.map(tab => {
+          const aktiv = aktuellerTab === tab.id
+          return (
+            <button
+              key={tab.id}
+              onClick={() => {
+                setAktuellerTab(tab.id)
+                if (tab.id === 'lernen') ladeStatistik()
+              }}
+              style={{
+                ...styles.navBtn,
+                color: aktiv ? '#7c3aed' : '#94a3b8',
+              }}
+            >
+              <span style={{
+                ...styles.navIcon,
+                filter: aktiv ? 'none' : 'grayscale(1) opacity(0.5)',
+                transform: aktiv ? 'scale(1.15)' : 'scale(1)',
+                transition: 'transform 0.15s ease',
+              }}>
+                {tab.icon}
+              </span>
+              <span style={{
+                ...styles.navLabel,
+                fontWeight: aktiv ? 700 : 500,
+                color: aktiv ? '#7c3aed' : '#94a3b8',
+              }}>
+                {tab.label}
+              </span>
+              {/* Aktiv-Linie */}
+              {aktiv && <div style={styles.navAktivLinie} />}
+              {/* Fällig-Punkt beim Lernen-Tab */}
+              {tab.id === 'lernen' && faelligAnzahl > 0 && !aktiv && (
+                <div style={styles.navPunkt} />
+              )}
+            </button>
+          )
+        })}
+      </nav>
+
     </div>
   )
 }
 
-const inputStyle = {
-  width: '100%', padding: '0.85rem', borderRadius: 10,
-  border: '2px solid #e0d9ff', fontSize: '1rem',
-  outline: 'none', boxSizing: 'border-box'
+// ─── CSS für Spinner-Animation ──────────────────────────────
+const spinnerCSS = `
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+  * { -webkit-tap-highlight-color: transparent; }
+  input:focus {
+    border-color: #7c3aed !important;
+    box-shadow: 0 0 0 3px rgba(124,58,237,0.1);
+  }
+  button:active { transform: scale(0.97); }
+`
+
+// ─── Styles ────────────────────────────────────────────────
+const styles = {
+  // Ladescreen
+  ladeScreen: {
+    minHeight: '100vh',
+    background: 'linear-gradient(160deg, #0f0c29, #302b63)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+  },
+  ladeInhalt: {
+    display: 'flex', flexDirection: 'column',
+    alignItems: 'center', gap: 12,
+  },
+  ladeLogo: { fontSize: '3rem' },
+  ladeName: {
+    color: 'white', fontWeight: 800,
+    fontSize: '1.5rem', margin: 0, letterSpacing: '-0.02em',
+  },
+  ladeSpinner: {
+    width: 32, height: 32, borderRadius: '50%',
+    border: '3px solid rgba(167,139,250,0.2)',
+    borderTop: '3px solid #a78bfa',
+    animation: 'spin 0.8s linear infinite',
+    marginTop: 8,
+  },
+
+  // App-Container
+  app: {
+    maxWidth: 480, margin: '0 auto',
+    minHeight: '100vh',
+    background: '#f1f5f9',
+    display: 'flex', flexDirection: 'column',
+    fontFamily: "'system-ui', '-apple-system', sans-serif",
+    position: 'relative',
+  },
+
+  // Header
+  header: {
+    background: 'linear-gradient(135deg, #7c3aed, #4f46e5)',
+    padding: '1rem 1.25rem 0.9rem',
+    flexShrink: 0,
+  },
+  headerInhalt: {
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+  },
+  headerTitel: {
+    margin: 0, fontSize: '1.25rem', fontWeight: 800,
+    color: 'white', letterSpacing: '-0.02em',
+  },
+  headerUntertitel: {
+    margin: '2px 0 0', fontSize: '0.78rem',
+    color: 'rgba(255,255,255,0.65)', fontWeight: 500,
+  },
+  faelligBadge: {
+    background: '#fbbf24', color: '#1e293b',
+    borderRadius: '50%', width: 30, height: 30,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontSize: '0.85rem', fontWeight: 800,
+    boxShadow: '0 2px 8px rgba(251,191,36,0.4)',
+  },
+
+  // Main
+  main: {
+    flex: 1,
+    overflowY: 'auto',
+    paddingBottom: 80, // Platz für Bottom Nav
+  },
+
+  // Bottom Navigation
+  nav: {
+    position: 'fixed', bottom: 0, left: '50%',
+    transform: 'translateX(-50%)',
+    width: '100%', maxWidth: 480,
+    background: 'white',
+    borderTop: '1px solid #e2e8f0',
+    display: 'flex',
+    boxShadow: '0 -4px 20px rgba(0,0,0,0.08)',
+    zIndex: 100,
+  },
+  navBtn: {
+    flex: 1, display: 'flex', flexDirection: 'column',
+    alignItems: 'center', justifyContent: 'center',
+    padding: '10px 4px 12px',
+    background: 'none', border: 'none',
+    cursor: 'pointer', position: 'relative',
+    gap: 3,
+  },
+  navIcon: { fontSize: '1.3rem', display: 'block' },
+  navLabel: {
+    fontSize: '0.65rem', display: 'block',
+    letterSpacing: '0.01em',
+  },
+  navAktivLinie: {
+    position: 'absolute', bottom: 0, left: '20%', right: '20%',
+    height: 3, borderRadius: '3px 3px 0 0',
+    background: 'linear-gradient(90deg, #7c3aed, #4f46e5)',
+  },
+  navPunkt: {
+    position: 'absolute', top: 8, right: '24%',
+    width: 7, height: 7, borderRadius: '50%',
+    background: '#f97316',
+    boxShadow: '0 0 0 2px white',
+  },
 }
