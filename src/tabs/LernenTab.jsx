@@ -1,6 +1,273 @@
 import { useState, useEffect, useCallback } from 'react'
 import { ladeAlleKarten, speichereFortschritt } from '../vokabeln'
-import { sindFaellig, berechneNaechsteWiederholung } from '../fsrs'
+import { ladeSessionKarten, berechneNaechsteWiederholung } from '../fsrs'
+
+// Flaggen pro Sprache
+const FLAGGE = { en: '🇬🇧', de: '🇩🇪' }
+
+// Richtungspfeil anzeigen
+function RichtungsBadge({ richtung }) {
+  const [von, nach] = richtung === 'en_de'
+    ? [FLAGGE.en, FLAGGE.de]
+    : [FLAGGE.de, FLAGGE.en]
+  return (
+    <div style={{
+      display: 'inline-flex', alignItems: 'center', gap: 6,
+      background: 'rgba(255,255,255,0.12)', borderRadius: 20,
+      padding: '4px 12px', fontSize: '0.9rem', color: 'rgba(255,255,255,0.9)',
+      backdropFilter: 'blur(8px)'
+    }}>
+      <span>{von}</span>
+      <span style={{ opacity: 0.6, fontSize: '0.75rem' }}>→</span>
+      <span>{nach}</span>
+    </div>
+  )
+}
+
+// Bewertungsbutton
+function BewertungsBtn({ wert, label, farbe, onClick }) {
+  const [gedrueckt, setGedrueckt] = useState(false)
+  return (
+    <button
+      onClick={() => { setGedrueckt(true); setTimeout(() => onClick(wert), 120) }}
+      style={{
+        flex: 1, padding: '0.9rem 0.4rem',
+        background: gedrueckt ? farbe : 'white',
+        color: gedrueckt ? 'white' : farbe,
+        border: `2px solid ${farbe}`,
+        borderRadius: 14, fontSize: '0.82rem',
+        fontWeight: 700, cursor: 'pointer',
+        transition: 'all 0.12s ease',
+        transform: gedrueckt ? 'scale(0.95)' : 'scale(1)',
+        fontFamily: 'inherit',
+        lineHeight: 1.3,
+        boxShadow: gedrueckt ? 'none' : `0 2px 8px ${farbe}33`
+      }}
+    >
+      {label}
+    </button>
+  )
+}
+
+export default function LernenTab({ einstellungen, onSessionEnde }) {
+  const [laden, setLaden] = useState(true)
+  const [sessionKarten, setSessionKarten] = useState([])
+  const [index, setIndex] = useState(0)
+  const [aufgedeckt, setAufgedeckt] = useState(false)
+  const [sessionInfo, setSessionInfo] = useState({ wiederholungAnzahl: 0, neuAnzahl: 0 })
+  const [aktuelleRichtung, setAktuelleRichtung] = useState(null)
+  const [animiere, setAnimiere] = useState(false)
+  // Heute bereits eingeführte neue Karten (in-memory pro Session-Start)
+  const [heuteNeu] = useState({})
+
+  const lernrichtung = einstellungen?.lernrichtung ?? 'smart'
+  const aktiveListen = einstellungen?.aktiveListen ?? ['en_a1']
+
+  const ladeSession = useCallback(async () => {
+    setLaden(true)
+    try {
+      const { alleKarten } = await ladeAlleKarten(aktiveListen, lernrichtung)
+      const { session, wiederholungAnzahl, neuAnzahl } = ladeSessionKarten(
+        alleKarten,
+        einstellungen ?? {},
+        heuteNeu
+      )
+      const gemischt = [...session].sort((a, b) => {
+        // Nur Neue mischen, Reihenfolge bei getrennt beibehalten
+        if (einstellungen?.neueKartenModus === 'gemischt') return Math.random() - 0.5
+        return 0
+      })
+      setSessionKarten(gemischt)
+      setSessionInfo({ wiederholungAnzahl, neuAnzahl })
+      setIndex(0)
+      setAufgedeckt(false)
+      if (gemischt.length > 0) {
+        setAktuelleRichtung(waehleSofortigeRichtung(gemischt[0], lernrichtung))
+      }
+    } catch (err) {
+      console.error('Fehler beim Laden:', err)
+    }
+    setLaden(false)
+  }, [aktiveListen, lernrichtung, einstellungen])
+
+  useEffect(() => { ladeSession() }, [ladeSession])
+
+  function waehleSofortigeRichtung(karte, richtung) {
+    if (richtung === 'abwechselnd') {
+      return Math.random() < 0.5 ? 'en_de' : 'de_en'
+    }
+    return karte.richtung
+  }
+
+  async function bewerteKarte(bewertung) {
+    const karte = sessionKarten[index]
+    if (!karte) return
+
+    const richtung = aktuelleRichtung ?? karte.richtung
+    const altesProfil = karte.aktivProfil ?? {}
+    const neuesProfil = berechneNaechsteWiederholung(altesProfil, bewertung)
+
+    // Wenn neue Karte: als heute gesehen markieren
+    if (!karte.aktivProfil) {
+      heuteNeu[karte.id] = true
+    }
+
+    const fsrsRichtung = richtung === 'abwechselnd' ? 'abwechselnd' : richtung
+    await speichereFortschritt(karte.id, fsrsRichtung, neuesProfil)
+
+    setAnimiere(true)
+    setTimeout(() => {
+      const naechsterIndex = index + 1
+      setIndex(naechsterIndex)
+      setAufgedeckt(false)
+      setAnimiere(false)
+      if (naechsterIndex < sessionKarten.length) {
+        setAktuelleRichtung(
+          waehleSofortigeRichtung(sessionKarten[naechsterIndex], lernrichtung)
+        )
+      }
+    }, 200)
+  }
+
+  if (laden) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.ladeWrapper}>
+          <div style={styles.spinner} />
+          <p style={{ color: '#94a3b8', marginTop: 16, fontSize: '0.9rem' }}>
+            Karten werden geladen...
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  const aktuelleKarte = sessionKarten[index]
+  const gesamt = sessionKarten.length
+  const fortschritt = gesamt > 0 ? Math.round((index / gesamt) * 100) : 100
+
+  // Alles gelernt
+  if (!aktuelleKarte) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.fertigWrapper}>
+          <div style={styles.fertigEmoji}>🎉</div>
+          <h2 style={styles.fertigTitel}>Alles erledigt!</h2>
+          <div style={styles.fertigStats}>
+            {sessionInfo.wiederholungAnzahl > 0 && (
+              <div style={styles.fertigStatItem}>
+                <span style={styles.fertigStatZahl}>{sessionInfo.wiederholungAnzahl}</span>
+                <span style={styles.fertigStatLabel}>Wiederholt</span>
+              </div>
+            )}
+            {sessionInfo.neuAnzahl > 0 && (
+              <div style={styles.fertigStatItem}>
+                <span style={{ ...styles.fertigStatZahl, color: '#22c55e' }}>
+                  {sessionInfo.neuAnzahl}
+                </span>
+                <span style={styles.fertigStatLabel}>Neu gelernt</span>
+              </div>
+            )}
+          </div>
+          <p style={styles.fertigText}>Komm morgen wieder — neue Karten warten!</p>
+          <button onClick={() => { if (onSessionEnde) onSessionEnde(); ladeSession() }} style={styles.wiederBtn}>
+            ↻ Nochmal prüfen
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // Karte ist neu (noch kein Profil)?
+  const istNeu = !aktuelleKarte.aktivProfil
+
+  const richtung = aktuelleRichtung ?? aktuelleKarte.richtung
+  const vorderseite = richtung === 'en_de'
+    ? aktuelleKarte.wort
+    : aktuelleKarte.uebersetzung
+  const rueckseite = richtung === 'en_de'
+    ? aktuelleKarte.uebersetzung
+    : aktuelleKarte.wort
+
+  return (
+    <div style={styles.container}>
+
+      {/* Progress Bar + Zähler */}
+      <div style={styles.progressHeader}>
+        <div style={styles.progressBar}>
+          <div style={{ ...styles.progressFill, width: `${fortschritt}%` }} />
+        </div>
+        <span style={styles.progressText}>{index} / {gesamt}</span>
+      </div>
+
+      {/* Session-Info Chips */}
+      <div style={styles.sessionChips}>
+        {sessionInfo.wiederholungAnzahl > 0 && (
+          <span style={styles.chipWdh}>🔄 {sessionInfo.wiederholungAnzahl} Wdh.</span>
+        )}
+        {sessionInfo.neuAnzahl > 0 && (
+          <span style={styles.chipNeu}>✨ {sessionInfo.neuAnzahl} Neu</span>
+        )}
+        {istNeu && (
+          <span style={styles.chipNeuAktiv}>Neue Karte</span>
+        )}
+      </div>
+
+      {/* Richtungs-Badge */}
+      <div style={{ textAlign: 'center', marginBottom: 20 }}>
+        <RichtungsBadge richtung={richtung} />
+      </div>
+
+      {/* Karteikarte */}
+      <div
+        style={{
+          ...styles.karte,
+          opacity: animiere ? 0 : 1,
+          transform: animiere ? 'translateY(12px) scale(0.97)' : 'translateY(0) scale(1)',
+          transition: 'all 0.2s ease'
+        }}
+      >
+        <div style={styles.karteVorderseite}>
+          <p style={styles.karteHinweis}>Was bedeutet...</p>
+          <h2 style={styles.karteWort}>{vorderseite}</h2>
+        </div>
+
+        {aufgedeckt && (
+          <div style={styles.karteRueckseite}>
+            <div style={styles.karteTrennlinie} />
+            <p style={styles.karteUebersetzung}>{rueckseite}</p>
+          </div>
+        )}
+
+        {!aufgedeckt && (
+          <button onClick={() => setAufgedeckt(true)} style={styles.aufdeckenBtn}>
+            Antwort zeigen
+          </button>
+        )}
+      </div>
+
+      {/* Bewertungsbuttons */}
+      {aufgedeckt && (
+        <div style={styles.bewertungWrapper}>
+          <p style={styles.bewertungHinweis}>Wie gut wusstest du es?</p>
+          <div style={styles.bewertungGrid}>
+            <BewertungsBtn wert={1} label={"😵\nNochmal"} farbe="#ef4444" onClick={bewerteKarte} />
+            <BewertungsBtn wert={2} label={"😕\nSchwer"}  farbe="#f97316" onClick={bewerteKarte} />
+            <BewertungsBtn wert={3} label={"🙂\nGut"}    farbe="#22c55e" onClick={bewerteKarte} />
+            <BewertungsBtn wert={4} label={"😄\nLeicht"} farbe="#3b82f6" onClick={bewerteKarte} />
+          </div>
+        </div>
+      )}
+
+      {aufgedeckt && (
+        <p style={styles.fsrsHinweis}>
+          Intervall: {aktuelleKarte.aktivProfil?.intervall ?? 0} Tag(e)
+        </p>
+      )}
+
+    </div>
+  )
+}
 
 // Flaggen pro Sprache
 const FLAGGE = { en: '🇬🇧', de: '🇩🇪' }
@@ -253,6 +520,42 @@ const styles = {
     minHeight: 'calc(100vh - 140px)',
     display: 'flex',
     flexDirection: 'column',
+  },
+
+  // Session Chips
+  sessionChips: {
+    display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap'
+  },
+  chipWdh: {
+    fontSize: '0.75rem', fontWeight: 700,
+    background: '#ede9fe', color: '#7c3aed',
+    padding: '3px 10px', borderRadius: 20,
+  },
+  chipNeu: {
+    fontSize: '0.75rem', fontWeight: 700,
+    background: '#dcfce7', color: '#16a34a',
+    padding: '3px 10px', borderRadius: 20,
+  },
+  chipNeuAktiv: {
+    fontSize: '0.75rem', fontWeight: 700,
+    background: '#22c55e', color: 'white',
+    padding: '3px 10px', borderRadius: 20,
+    marginLeft: 'auto',
+  },
+
+  // Fertig Stats
+  fertigStats: {
+    display: 'flex', gap: 24, margin: '16px 0 8px',
+  },
+  fertigStatItem: {
+    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2
+  },
+  fertigStatZahl: {
+    fontSize: '2rem', fontWeight: 800, color: '#a78bfa', lineHeight: 1
+  },
+  fertigStatLabel: {
+    fontSize: '0.72rem', color: '#94a3b8',
+    fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em'
   },
 
   // Laden
