@@ -168,6 +168,57 @@ export default function EinstellungenTab({
         ))}
       </div>
 
+      {/* ── Neue Karten ── */}
+      <div style={styles.sektion}>
+        <h3 style={styles.sektionTitel}>✨ Neue Karten</h3>
+
+        {/* Anzahl Slider */}
+        <p style={{ ...styles.label, marginBottom: 8 }}>Neue Karten pro Tag</p>
+        <div style={styles.sliderWrapper}>
+          <input
+            type="range"
+            min={1} max={50}
+            value={einst.neueKartenProTag ?? 10}
+            onChange={e => setEinst({ ...einst, neueKartenProTag: Number(e.target.value) })}
+            style={styles.slider}
+          />
+          <span style={styles.sliderWert}>{einst.neueKartenProTag ?? 10}</span>
+        </div>
+        <div style={styles.sliderLabels}>
+          <span>1</span><span>10</span><span>25</span><span>50</span>
+        </div>
+
+        {/* Modus */}
+        <p style={{ ...styles.label, marginTop: 16, marginBottom: 8 }}>Reihenfolge</p>
+        {[
+          { wert: 'getrennt', label: '📋 Getrennt', beschreibung: 'Erst alle Wiederholungen, dann neue Karten' },
+          { wert: 'gemischt', label: '🔀 Gemischt', beschreibung: 'Neue und alte Karten abwechselnd (wie Duolingo)' },
+        ].map(m => (
+          <AuswahlKarte
+            key={m.wert}
+            aktiv={einst.neueKartenModus === m.wert}
+            onClick={() => setEinst({ ...einst, neueKartenModus: m.wert })}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <span style={{
+                  fontWeight: 700, fontSize: '0.88rem',
+                  color: einst.neueKartenModus === m.wert ? '#7c3aed' : '#1e293b'
+                }}>{m.label}</span>
+                <p style={styles.auswahlBeschreibung}>{m.beschreibung}</p>
+              </div>
+              <div style={{
+                ...styles.radioKreis,
+                borderColor: einst.neueKartenModus === m.wert ? '#7c3aed' : '#cbd5e1',
+                background: einst.neueKartenModus === m.wert ? '#7c3aed' : 'white',
+              }}>
+                {einst.neueKartenModus === m.wert && <div style={styles.radioKern} />}
+              </div>
+            </div>
+          </AuswahlKarte>
+        ))}
+      </div>
+
       {/* ── Notifications ── */}
       <div style={styles.sektion}>
         <h3 style={styles.sektionTitel}>🔔 Benachrichtigungen</h3>
@@ -386,5 +437,21 @@ const styles = {
     fontSize: '0.85rem', color: '#dc2626',
     fontWeight: 600, marginBottom: 12,
     textAlign: 'center'
+  },
+
+  sliderWrapper: {
+    display: 'flex', alignItems: 'center', gap: 12,
+  },
+  slider: {
+    flex: 1, accentColor: '#7c3aed', cursor: 'pointer',
+  },
+  sliderWert: {
+    minWidth: 28, fontWeight: 800, fontSize: '1.1rem',
+    color: '#7c3aed', textAlign: 'center',
+  },
+  sliderLabels: {
+    display: 'flex', justifyContent: 'space-between',
+    fontSize: '0.7rem', color: '#cbd5e1',
+    marginTop: 4, padding: '0 2px',
   },
 }
