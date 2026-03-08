@@ -265,7 +265,139 @@ export function sindFaellig(karten, lernrichtung = 'smart') {
 
 
 // ------------------------------------------------------------
-// 6. Hilfsfunktion: Profilstatus für eine Vokabel
+// 6. Session zusammenstellen (Wiederholungen + Neue Karten)
+// ------------------------------------------------------------
+
+/**
+ * Stellt eine komplette Lern-Session zusammen.
+ *
+ * Neue Karten = Karten ohne aktives Profil für die gewählte Richtung.
+ * Wiederholungen = Karten mit Profil die heute fällig sind.
+ *
+ * Modi:
+ *   'getrennt'  — erst alle Wiederholungen, dann Neue
+ *   'gemischt'  — abwechselnd Wiederholung / Neu (wie Duolingo)
+ *
+ * @param {Array}  alleKarten        - aus ladeAlleKarten() (mit Profilen)
+ * @param {object} einstellungen     - { lernrichtung, neueKartenProTag, neueKartenModus }
+ * @param {object} heuteGesehen      - { [vokabelId]: true } bereits heute eingeführte neue Karten
+ * @returns {{ session, wiederholungAnzahl, neuAnzahl }}
+ */
+export function ladeSessionKarten(alleKarten, einstellungen, heuteGesehen = {}) {
+  const {
+    lernrichtung    = 'smart',
+    neueKartenProTag = 10,
+    neueKartenModus  = 'getrennt',
+  } = einstellungen
+
+  // 1. Lernkarten aus alleKarten ableiten (mit Richtung + aktivProfil)
+  const lernkarten = []
+  for (const karte of alleKarten) {
+    if (lernrichtung === 'abwechselnd') {
+      const profil = karte.profil_abwechselnd ?? null
+      lernkarten.push({ ...karte, richtung: 'abwechselnd', aktivProfil: profil })
+    } else if (lernrichtung === 'en_de') {
+      lernkarten.push({ ...karte, richtung: 'en_de', aktivProfil: karte.profil_en_de ?? null })
+    } else if (lernrichtung === 'de_en') {
+      lernkarten.push({ ...karte, richtung: 'de_en', aktivProfil: karte.profil_de_en ?? null })
+    } else {
+      // smart / beide → waehleRichtung pro Karte
+      const richtung = waehleRichtung(
+        { en_de: karte.profil_en_de, de_en: karte.profil_de_en },
+        lernrichtung
+      )
+      const profil = richtung === 'en_de' ? karte.profil_en_de : karte.profil_de_en
+      lernkarten.push({ ...karte, richtung, aktivProfil: profil ?? null })
+    }
+  }
+
+  // 2. Trennen: Wiederholungen vs. Neue
+  const jetzt = Date.now()
+
+  const wiederholungen = []
+  const neuKandidaten  = []
+
+  for (const karte of lernkarten) {
+    if (!karte.aktivProfil) {
+      // Noch nie gesehen → Neue Karte
+      neuKandidaten.push(karte)
+    } else if (karte.aktivProfil.naechsteFaelligkeit <= jetzt) {
+      // Profil vorhanden + fällig → Wiederholung
+      wiederholungen.push(karte)
+    }
+    // Profil vorhanden aber noch nicht fällig → gar nicht in Session
+  }
+
+  // 3. Session-Abstand-Regel für Wiederholungen (smart/beide)
+  const wiederholungenGefiltert =
+    (lernrichtung === 'beide' || lernrichtung === 'smart')
+      ? _sessionAbstandRegel(wiederholungen)
+      : wiederholungen
+
+  // 4. Neue Karten: max. neueKartenProTag, heute noch nicht gesehen
+  const bereitsHeuteNeu = Object.keys(heuteGesehen).length
+  const nochErlaubt     = Math.max(0, neueKartenProTag - bereitsHeuteNeu)
+  const neueKarten      = neuKandidaten
+    .filter(k => !heuteGesehen[k.id])
+    .slice(0, nochErlaubt)
+
+  // 5. Session zusammenstellen
+  let session
+  if (neueKartenModus === 'gemischt') {
+    session = _mischen(wiederholungenGefiltert, neueKarten)
+  } else {
+    // getrennt: erst Wiederholungen, dann Neue
+    session = [...wiederholungenGefiltert, ...neueKarten]
+  }
+
+  return {
+    session,
+    wiederholungAnzahl: wiederholungenGefiltert.length,
+    neuAnzahl:          neueKarten.length,
+  }
+}
+
+/**
+ * Session-Abstand-Regel intern (aus sindFaellig extrahiert).
+ */
+function _sessionAbstandRegel(karten) {
+  const nachVokabel = {}
+  for (const k of karten) {
+    const vid = k.vokabelId ?? k.id
+    if (!nachVokabel[vid]) nachVokabel[vid] = []
+    nachVokabel[vid].push(k)
+  }
+  const ergebnis = []
+  for (const richtungen of Object.values(nachVokabel)) {
+    if (richtungen.length <= 1) {
+      ergebnis.push(...richtungen)
+    } else {
+      const schwaecher = richtungen.reduce((a, b) =>
+        (a.aktivProfil?.stabilitaet ?? 1) <= (b.aktivProfil?.stabilitaet ?? 1) ? a : b
+      )
+      ergebnis.push(schwaecher)
+    }
+  }
+  return ergebnis
+}
+
+/**
+ * Mischt zwei Arrays abwechselnd: [W, N, W, N, W, W, W...]
+ * Wiederholungen und Neue wechseln sich ab, Rest wird angehängt.
+ */
+function _mischen(a, b) {
+  const ergebnis = []
+  const max = Math.max(a.length, b.length)
+  for (let i = 0; i < max; i++) {
+    if (i < a.length) ergebnis.push(a[i])
+    if (i < b.length) ergebnis.push(b[i])
+  }
+  return ergebnis
+}
+
+
+// ------------------------------------------------------------
+// 7. Hilfsfunktion: Profilstatus für eine Vokabel
 // ------------------------------------------------------------
 
 /**
