@@ -39,6 +39,10 @@ export const DEFAULT_EINSTELLUNGEN = {
   lernrichtung: 'smart',       // smart | beide | en_de | de_en | abwechselnd
   lernrichtungVorher: null,    // merkt sich die letzte Richtung für Wechsel-Logik
 
+  // Neue Karten
+  neueKartenProTag: 10,        // 1–50
+  neueKartenModus: 'getrennt', // getrennt | gemischt
+
   // Onboarding (NEU)
   onboardingAbgeschlossen: false,
 }
