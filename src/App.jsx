@@ -25,12 +25,26 @@ export default function App() {
   const [faelligAnzahl, setFaelligAnzahl] = useState(0)
   const [laden, setLaden] = useState(true)
 
+  const [deepLinkVokabel, setDeepLinkVokabel] = useState(null)
+
   // App initialisieren
   useEffect(() => {
     async function init() {
       const einst = await ladeEinstellungen()
       setEinstellungen(einst)
       setNotifAktiv(Notification.permission === 'granted')
+
+      // Deep Link aus Notification: ?vokabel=en_a1_042&richtung=en_de
+      const params = new URLSearchParams(window.location.search)
+      const vokabelId = params.get('vokabel')
+      const richtung  = params.get('richtung')
+      if (vokabelId) {
+        setDeepLinkVokabel({ id: vokabelId, richtung: richtung ?? 'en_de' })
+        setAktuellerTab('lernen')
+        // URL aufräumen ohne Reload
+        window.history.replaceState({}, '', window.location.pathname)
+      }
+
       setLaden(false)
     }
     init()
@@ -136,6 +150,7 @@ export default function App() {
       <main style={styles.main}>
         {aktuellerTab === 'lernen' && (
           <LernenTab
+              deepLinkVokabel={deepLinkVokabel}
             einstellungen={einstellungen}
             onSessionEnde={ladeStatistik}
           />
