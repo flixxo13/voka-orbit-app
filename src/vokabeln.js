@@ -1,26 +1,11 @@
 // ============================================================
 // VokaOrbit — vokabeln.js
 // ============================================================
-//
-// Lädt und kombiniert alle Vokabeln:
-//   - Listen-Karten: aus public/listen/*.json (statisch)
-//   - Eigene Karten: aus Firestore (eigeneVokabeln)
-//
-// Fortschritt (FSRS-Profile) kommt immer aus Firestore.
-//
-// Exports:
-//   ladeAlleKarten()           → Lernkarten mit Profilen + Richtung
-//   speichereFortschritt()     → FSRS-Ergebnis zurückschreiben
-//   verarbeiteRichtungswechsel() → Profile anlegen bei Richtungsänderung
-//   ladeEigeneVokabeln()       → für den "Neu"-Tab
-//   vokabelHinzufuegen()       → neue eigene Vokabel speichern
-//   vokabelLoeschen()          → eigene Vokabel löschen
-// ============================================================
 
 import { db } from './firebase'
 import {
   collection, getDocs, doc, setDoc, deleteDoc,
-  addDoc, query, where
+  addDoc, query, where, writeBatch
 } from 'firebase/firestore'
 import { DEVICE_ID } from './einstellungen'
 import { erstelleStartProfil, handleRichtungswechsel, waehleRichtung } from './fsrs'
@@ -30,11 +15,6 @@ import { erstelleStartProfil, handleRichtungswechsel, waehleRichtung } from './f
 // 1. Listen-Karten aus JSON laden
 // ------------------------------------------------------------
 
-/**
- * Lädt eine einzelne Vokabelliste aus public/listen/
- * @param {string} listenId - z.B. "en_a1"
- * @returns {Array} - [{ id: "en_a1_000", wort, uebersetzung }, ...]
- */
 async function ladeListeAusJSON(listenId) {
   try {
     const res = await fetch(`/listen/${listenId}.json`)
@@ -54,98 +34,190 @@ async function ladeListeAusJSON(listenId) {
   }
 }
 
-/**
- * Lädt alle aktiven Listen
- * @param {string[]} aktiveListen - z.B. ["en_a1", "en_b1"]
- * @returns {Array} - alle Karten aus allen aktiven Listen
- */
 async function ladeAktiveListen(aktiveListen = []) {
-  const ergebnisse = await Promise.all(aktiveListen.map(ladeListeAusJSON))
-  return ergebnisse.flat()
+  const offizielle = aktiveListen.filter(id => !id.startsWith('eigen_list_'))
+  const eigene     = aktiveListen.filter(id => id.startsWith('eigen_list_'))
+
+  const [offizielleKarten, eigeneKarten] = await Promise.all([
+    Promise.all(offizielle.map(ladeListeAusJSON)).then(r => r.flat()),
+    eigene.length > 0 ? ladeVokabelnFuerListen(eigene) : Promise.resolve([])
+  ])
+
+  return [...offizielleKarten, ...eigeneKarten]
 }
 
 
 // ------------------------------------------------------------
-// 2. Eigene Vokabeln aus Firestore laden
+// 2. Eigene Listen
 // ------------------------------------------------------------
 
-/**
- * Lädt alle eigenen Vokabeln dieses Geräts.
- * @returns {Array} - [{ id: "eigen_xxx", typ: "eigen", wort, uebersetzung }, ...]
- */
-export async function ladeEigeneVokabeln() {
+export async function ladeEigeneListen() {
   try {
-    const q = query(
-      collection(db, 'eigeneVokabeln'),
-      where('deviceId', '==', DEVICE_ID)
-    )
+    const q = query(collection(db, 'eigeneListen'), where('deviceId', '==', DEVICE_ID))
     const snap = await getDocs(q)
     return snap.docs.map(d => ({
-      id: `eigen_${d.id}`,
-      firestoreId: d.id,
-      typ: 'eigen',
-      wort: d.data().vorderseite,
-      uebersetzung: d.data().rueckseite,
-      erstellt: d.data().erstellt
-    }))
+      id: d.id,
+      listenId: `eigen_list_${d.id}`,
+      ...d.data()
+    })).sort((a, b) => (a.erstellt ?? 0) - (b.erstellt ?? 0))
   } catch (err) {
-    console.error('Fehler beim Laden eigener Vokabeln:', err)
+    console.error('Fehler beim Laden eigener Listen:', err)
     return []
   }
 }
 
-/**
- * Speichert eine neue eigene Vokabel.
- * @param {string} vorderseite
- * @param {string} rueckseite
- */
+export async function listeErstellen(titel) {
+  const docRef = await addDoc(collection(db, 'eigeneListen'), {
+    deviceId:      DEVICE_ID,
+    titel:         titel.trim(),
+    vokabelAnzahl: 0,
+    erstellt:      Date.now()
+  })
+  return `eigen_list_${docRef.id}`
+}
+
+export async function listeLoeschen(firestoreListenId) {
+  const batch = writeBatch(db)
+  const vokQ = query(
+    collection(db, 'eigeneVokabeln'),
+    where('listenId', '==', firestoreListenId),
+    where('deviceId', '==', DEVICE_ID)
+  )
+  const vokSnap = await getDocs(vokQ)
+  vokSnap.docs.forEach(d => batch.delete(d.ref))
+  batch.delete(doc(db, 'eigeneListen', firestoreListenId))
+  await batch.commit()
+}
+
+export async function ladeVokabelnFuerListe(firestoreListenId) {
+  try {
+    const q = query(
+      collection(db, 'eigeneVokabeln'),
+      where('listenId', '==', firestoreListenId),
+      where('deviceId', '==', DEVICE_ID)
+    )
+    const snap = await getDocs(q)
+    return snap.docs.map(d => ({
+      id: d.id,
+      ...d.data()
+    })).sort((a, b) => (a.erstellt ?? 0) - (b.erstellt ?? 0))
+  } catch (err) {
+    console.error('Fehler beim Laden der Vokabeln:', err)
+    return []
+  }
+}
+
+async function ladeVokabelnFuerListen(listenIds) {
+  const alle = await Promise.all(
+    listenIds.map(async listenId => {
+      const firestoreId = listenId.replace('eigen_list_', '')
+      const vokabeln = await ladeVokabelnFuerListe(firestoreId)
+      return vokabeln.map((v, index) => ({
+        id: `${listenId}_${String(index).padStart(3, '0')}`,
+        typ: 'eigen',
+        wort: v.vorderseite,
+        uebersetzung: v.rueckseite,
+        listenId,
+      }))
+    })
+  )
+  return alle.flat()
+}
+
+export async function vokabelZuListeHinzufuegen(firestoreListenId, vorderseite, rueckseite) {
+  const docRef = await addDoc(collection(db, 'eigeneVokabeln'), {
+    deviceId:    DEVICE_ID,
+    listenId:    firestoreListenId,
+    vorderseite: vorderseite.trim(),
+    rueckseite:  rueckseite.trim(),
+    erstellt:    Date.now()
+  })
+  getDocs(query(
+    collection(db, 'eigeneVokabeln'),
+    where('listenId', '==', firestoreListenId),
+    where('deviceId', '==', DEVICE_ID)
+  )).then(snap => {
+    setDoc(doc(db, 'eigeneListen', firestoreListenId), { vokabelAnzahl: snap.size }, { merge: true })
+  })
+  return docRef.id
+}
+
+export async function vokabelAusListeLoeschen(vokabelFirestoreId, firestoreListenId) {
+  await deleteDoc(doc(db, 'eigeneVokabeln', vokabelFirestoreId))
+  getDocs(query(
+    collection(db, 'eigeneVokabeln'),
+    where('listenId', '==', firestoreListenId),
+    where('deviceId', '==', DEVICE_ID)
+  )).then(snap => {
+    setDoc(doc(db, 'eigeneListen', firestoreListenId), { vokabelAnzahl: snap.size }, { merge: true })
+  })
+}
+
+export async function migriereLegacyVokabeln() {
+  try {
+    const q = query(collection(db, 'eigeneVokabeln'), where('deviceId', '==', DEVICE_ID))
+    const snap = await getDocs(q)
+    const legacy = snap.docs.filter(d => !d.data().listenId)
+    if (legacy.length === 0) return
+    const listenRef = await addDoc(collection(db, 'eigeneListen'), {
+      deviceId:      DEVICE_ID,
+      titel:         'Meine Vokabeln',
+      vokabelAnzahl: legacy.length,
+      erstellt:      Date.now() - 1,
+      migriert:      true
+    })
+    const batch = writeBatch(db)
+    legacy.forEach(d => batch.update(d.ref, { listenId: listenRef.id }))
+    await batch.commit()
+    console.log(`Migration: ${legacy.length} Vokabeln -> Meine Vokabeln`)
+  } catch (err) {
+    console.error('Migrationsfehler:', err)
+  }
+}
+
+// Abwaertskompatibilitaet
+export async function ladeEigeneVokabeln() {
+  try {
+    const q = query(collection(db, 'eigeneVokabeln'), where('deviceId', '==', DEVICE_ID))
+    const snap = await getDocs(q)
+    return snap.docs.map(d => ({
+      id: `eigen_${d.id}`, firestoreId: d.id, typ: 'eigen',
+      wort: d.data().vorderseite, uebersetzung: d.data().rueckseite, erstellt: d.data().erstellt
+    }))
+  } catch { return [] }
+}
+
 export async function vokabelHinzufuegen(vorderseite, rueckseite) {
   const docRef = await addDoc(collection(db, 'eigeneVokabeln'), {
-    deviceId: DEVICE_ID,
-    vorderseite: vorderseite.trim(),
-    rueckseite: rueckseite.trim(),
-    erstellt: Date.now()
+    deviceId: DEVICE_ID, vorderseite: vorderseite.trim(),
+    rueckseite: rueckseite.trim(), erstellt: Date.now()
   })
   return `eigen_${docRef.id}`
 }
 
-/**
- * Löscht eine eigene Vokabel.
- * @param {string} vokabelId - z.B. "eigen_xK9mP2qR"
- */
 export async function vokabelLoeschen(vokabelId) {
-  const firestoreId = vokabelId.replace('eigen_', '')
-  await deleteDoc(doc(db, 'eigeneVokabeln', firestoreId))
+  await deleteDoc(doc(db, 'eigeneVokabeln', vokabelId.replace('eigen_', '')))
 }
 
 
 // ------------------------------------------------------------
-// 3. Fortschritt (FSRS-Profile) aus Firestore laden
+// 3. Fortschritt
 // ------------------------------------------------------------
 
-/**
- * Lädt alle FSRS-Profile dieses Geräts.
- * @returns {object} - { "en_a1_042_en_de": profilDaten, ... }
- */
 async function ladeFortschritt() {
   try {
-    const q = query(
-      collection(db, 'fortschritt'),
-      where('deviceId', '==', DEVICE_ID)
-    )
+    const q = query(collection(db, 'fortschritt'), where('deviceId', '==', DEVICE_ID))
     const snap = await getDocs(q)
-
     const profile = {}
     snap.docs.forEach(d => {
       const daten = d.data()
-      const schluessel = `${daten.vokabelId}_${daten.richtung}`
-      profile[schluessel] = {
-        intervall: daten.intervall ?? 0,
-        wiederholungen: daten.wiederholungen ?? 0,
-        stabilitaet: daten.stabilitaet ?? 1,
+      profile[`${daten.vokabelId}_${daten.richtung}`] = {
+        intervall:           daten.intervall ?? 0,
+        wiederholungen:      daten.wiederholungen ?? 0,
+        stabilitaet:         daten.stabilitaet ?? 1,
         naechsteFaelligkeit: daten.naechsteFaelligkeit ?? Date.now(),
-        letzteWiederholung: daten.letzteWiederholung ?? null,
-        firestoreId: d.id
+        letzteWiederholung:  daten.letzteWiederholung ?? null,
+        firestoreId:         d.id
       }
     })
     return profile
@@ -155,42 +227,20 @@ async function ladeFortschritt() {
   }
 }
 
-
-// ------------------------------------------------------------
-// 4. Fortschritt speichern
-// ------------------------------------------------------------
-
-/**
- * Speichert ein FSRS-Profil nach einer Bewertung.
- * @param {string} vokabelId - z.B. "en_a1_042" oder "eigen_xK9mP2qR"
- * @param {string} richtung  - "en_de" | "de_en" | "abwechselnd"
- * @param {object} profilDaten - { intervall, wiederholungen, stabilitaet, naechsteFaelligkeit, letzteWiederholung }
- */
 export async function speichereFortschritt(vokabelId, richtung, profilDaten, meta = {}) {
-  // Dokument-ID ist immer deterministisch → kein Duplikat möglich
   const docId = `${DEVICE_ID}_${vokabelId}_${richtung}`
   await setDoc(doc(db, 'fortschritt', docId), {
-    deviceId: DEVICE_ID,
-    vokabelId,
-    richtung,
-    // wort + uebersetzung für Server-Notifications mitspeichern
-    wort:         meta.wort         ?? '',
-    uebersetzung: meta.uebersetzung ?? '',
+    deviceId: DEVICE_ID, vokabelId, richtung,
+    wort: meta.wort ?? '', uebersetzung: meta.uebersetzung ?? '',
     ...profilDaten
   })
 }
 
 
 // ------------------------------------------------------------
-// 5. Profile zusammenführen
+// 4. Lernkarten
 // ------------------------------------------------------------
 
-/**
- * Hängt FSRS-Profile an eine Karte.
- * @param {object} karte - { id, wort, uebersetzung, ... }
- * @param {object} alleProfile - gesamtes Fortschritt-Objekt
- * @returns {object} - Karte mit profil_en_de, profil_de_en, profil_abwechselnd
- */
 function haengeProfileAn(karte, alleProfile) {
   return {
     ...karte,
@@ -200,141 +250,63 @@ function haengeProfileAn(karte, alleProfile) {
   }
 }
 
-
-// ------------------------------------------------------------
-// 6. Lernkarte erstellen (mit Richtung + Vorderseite/Rückseite)
-// ------------------------------------------------------------
-
-/**
- * Erstellt eine Lernkarte aus einer Karte + gewählter Richtung.
- * @param {object} karte - Karte mit Profilen
- * @param {string} richtung - "en_de" | "de_en"
- * @returns {object} - Lernkarte mit vorderseite, rueckseite, aktivProfil
- */
 function erstelleLernkarte(karte, richtung) {
   const aktivProfil = richtung === 'en_de'
     ? (karte.profil_en_de ?? erstelleStartProfil())
     : (karte.profil_de_en ?? erstelleStartProfil())
-
   return {
-    ...karte,
-    richtung,
-    vorderseite: richtung === 'en_de' ? karte.wort        : karte.uebersetzung,
+    ...karte, richtung,
+    vorderseite: richtung === 'en_de' ? karte.wort         : karte.uebersetzung,
     rueckseite:  richtung === 'en_de' ? karte.uebersetzung : karte.wort,
     aktivProfil
   }
 }
 
-
-// ------------------------------------------------------------
-// 7. Hauptfunktion: Alle Karten laden
-// ------------------------------------------------------------
-
-/**
- * Lädt alle Karten (Listen + eigene) mit Profilen,
- * bestimmt die Lernrichtung und gibt Lernkarten zurück.
- *
- * @param {string[]} aktiveListen - aktive Listen-IDs
- * @param {string} lernrichtung   - "smart"|"beide"|"en_de"|"de_en"|"abwechselnd"
- * @returns {object} - { alleKarten, lernkarten }
- *   alleKarten:  alle Karten mit Profilen (für Statistik/Entdecken)
- *   lernkarten:  Karten bereit zum Lernen (mit vorderseite/rueckseite/aktivProfil)
- */
 export async function ladeAlleKarten(aktiveListen = [], lernrichtung = 'smart') {
-  // Parallel laden
-  const [listenKarten, eigeneKarten, alleProfile] = await Promise.all([
+  const [listenKarten, alleProfile] = await Promise.all([
     ladeAktiveListen(aktiveListen),
-    ladeEigeneVokabeln(),
     ladeFortschritt()
   ])
-
-  // Profile anhängen
-  const alleKarten = [
-    ...listenKarten.map(k => haengeProfileAn(k, alleProfile)),
-    ...eigeneKarten.map(k => haengeProfileAn(k, alleProfile))
-  ]
-
-  // Lernkarten erstellen je nach Richtungseinstellung
+  const alleKarten = listenKarten.map(k => haengeProfileAn(k, alleProfile))
   const lernkarten = []
 
   if (lernrichtung === 'abwechselnd') {
-    // Ein Profil, Richtung per Zufall beim Anzeigen
     for (const karte of alleKarten) {
-      const profil = karte.profil_abwechselnd ?? erstelleStartProfil()
       lernkarten.push({
-        ...karte,
-        richtung: 'abwechselnd', // wird in LernenTab beim Anzeigen gewürfelt
-        vorderseite: karte.wort,
-        rueckseite: karte.uebersetzung,
-        aktivProfil: profil
+        ...karte, richtung: 'abwechselnd',
+        vorderseite: karte.wort, rueckseite: karte.uebersetzung,
+        aktivProfil: karte.profil_abwechselnd ?? erstelleStartProfil()
       })
     }
   } else if (lernrichtung === 'en_de') {
-    for (const karte of alleKarten) {
-      lernkarten.push(erstelleLernkarte(karte, 'en_de'))
-    }
+    for (const karte of alleKarten) lernkarten.push(erstelleLernkarte(karte, 'en_de'))
   } else if (lernrichtung === 'de_en') {
-    for (const karte of alleKarten) {
-      lernkarten.push(erstelleLernkarte(karte, 'de_en'))
-    }
+    for (const karte of alleKarten) lernkarten.push(erstelleLernkarte(karte, 'de_en'))
   } else {
-    // "smart" oder "beide" → waehleRichtung pro Karte
     for (const karte of alleKarten) {
       const richtung = waehleRichtung(
-        { en_de: karte.profil_en_de, de_en: karte.profil_de_en },
-        lernrichtung
+        { en_de: karte.profil_en_de, de_en: karte.profil_de_en }, lernrichtung
       )
       lernkarten.push(erstelleLernkarte(karte, richtung))
     }
   }
-
   return { alleKarten, lernkarten }
 }
 
-
-// ------------------------------------------------------------
-// 8. Richtungswechsel verarbeiten
-// ------------------------------------------------------------
-
-/**
- * Wird aufgerufen wenn der Nutzer die Lernrichtung ändert.
- * Legt fehlende FSRS-Profile an — bestehende bleiben erhalten.
- *
- * @param {string} vorher - alte Richtungseinstellung
- * @param {string} nachher - neue Richtungseinstellung
- * @param {string[]} aktiveListen - aktive Listen
- */
 export async function verarbeiteRichtungswechsel(vorher, nachher, aktiveListen) {
   if (vorher === nachher) return
-
-  // Alle Karten + Profile laden
-  const [listenKarten, eigeneKarten, alleProfile] = await Promise.all([
-    ladeAktiveListen(aktiveListen),
-    ladeEigeneVokabeln(),
-    ladeFortschritt()
+  const [listenKarten, alleProfile] = await Promise.all([
+    ladeAktiveListen(aktiveListen), ladeFortschritt()
   ])
-
-  const alleKarten = [
-    ...listenKarten.map(k => haengeProfileAn(k, alleProfile)),
-    ...eigeneKarten.map(k => haengeProfileAn(k, alleProfile))
-  ]
-
-  // Für jede Karte prüfen ob neue Profile angelegt werden müssen
+  const alleKarten = listenKarten.map(k => haengeProfileAn(k, alleProfile))
   const schreibVorgaenge = []
-
   for (const karte of alleKarten) {
     const { neuAnlegen } = handleRichtungswechsel(vorher, nachher, {
-      en_de:       karte.profil_en_de,
-      de_en:       karte.profil_de_en,
-      abwechselnd: karte.profil_abwechselnd
+      en_de: karte.profil_en_de, de_en: karte.profil_de_en, abwechselnd: karte.profil_abwechselnd
     })
-
     for (const { richtung, profil } of neuAnlegen) {
       schreibVorgaenge.push(speichereFortschritt(karte.id, richtung, profil))
     }
   }
-
-  // Alle parallel schreiben
   await Promise.all(schreibVorgaenge)
-  console.log(`✅ Richtungswechsel ${vorher} → ${nachher}: ${schreibVorgaenge.length} neue Profile angelegt`)
 }
