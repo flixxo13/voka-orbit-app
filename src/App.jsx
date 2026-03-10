@@ -156,7 +156,7 @@ export default function App() {
           />
         )}
         {aktuellerTab === 'neu' && (
-          <NeuTab />
+          <NeuTab einstellungen={einstellungen} setEinstellungen={handleEinstellungenAktualisieren} />
         )}
         {aktuellerTab === 'entdecken' && (
           <EntdeckenTab
