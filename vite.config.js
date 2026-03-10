@@ -7,11 +7,15 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      workbox: {
+        skipWaiting: true,
+        clientsClaim: true,
+      },
       manifest: {
-        name: 'VokabelApp',
-        short_name: 'Vokabeln',
-        description: 'Lerne Vokabeln mit intelligentem Wiederholungssystem',
-        theme_color: '#6c63ff',
+        name: 'VokaOrbit',
+        short_name: 'VokaOrbit',
+        description: 'Vokabeln lernen mit intelligentem Wiederholungssystem',
+        theme_color: '#7c3aed',
         background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait',
