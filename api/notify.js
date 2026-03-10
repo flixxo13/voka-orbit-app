@@ -84,7 +84,6 @@ export default async function handler(req, res) {
     const minute      = jetztDatum.getMinutes()
     const heuteDatum  = jetztDatum.toISOString().split('T')[0]
 
-    // Zeitprüfung — im Testmodus überspringen
     if (!testModus && minute >= 15) {
       return res.status(200).json({
         message: `Zu spät in der Stunde (${stunde}:${minute}) — nächste Chance :00`,
@@ -238,3 +237,4 @@ export default async function handler(req, res) {
     console.error('notify.js Fehler:', err)
     return res.status(500).json({ error: err.message })
   }
+}
