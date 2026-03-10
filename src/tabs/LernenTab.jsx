@@ -171,6 +171,21 @@ export default function LernenTab({ einstellungen, onSessionEnde, deepLinkVokabe
   const fortschritt = gesamt > 0 ? Math.round((index / gesamt) * 100) : 100
   const istNeu = !aktuelleKarte?.aktivProfil
 
+  // ── Keine Listen aktiv ───────────────────────────────────
+  if (!aktuelleKarte && (einstellungen?.aktiveListen ?? []).length === 0) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.fertigWrapper}>
+          <div style={styles.fertigEmoji}>📂</div>
+          <h2 style={styles.fertigTitel}>Keine Liste aktiv</h2>
+          <p style={{ color: '#94a3b8', fontSize: '0.9rem', textAlign: 'center', margin: '0 0 20px', lineHeight: 1.6 }}>
+            Aktiviere mindestens eine Liste im Entdecken-Tab um loszulegen.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   // ── Fertig-Screen ────────────────────────────────────────
   if (!aktuelleKarte) {
     const heuteNeu = ladeHeuteNeu()
