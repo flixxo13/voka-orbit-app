@@ -358,11 +358,21 @@ export function ladeSessionKarten(alleKarten, einstellungen, heuteGesehen = {}) 
 }
 
 /**
- * Verteilt neue Karten fair über alle Listen (Round-Robin).
- * Verhindert dass bei Limit=3 alle 3 aus der ersten Liste kommen.
+ * Verteilt neue Karten gewichtet nach Listengröße.
+ *
+ * Prinzip:
+ *   - Jede Liste bekommt Slots proportional zu ihrer Anzahl verbleibender Karten
+ *   - Minimum 1 Slot pro Liste (solange Limit es erlaubt)
+ *
+ * Beispiel bei Limit=10, Listen mit 300/30/4 verbleibenden Karten:
+ *   → Slots: 8 / 1 / 1  (proportional, aber C bekommt mindestens 1)
+ *
+ * Beispiel bei Limit=3, Listen mit 300/30/4:
+ *   → Slots: 1 / 1 / 1  (Minimum greift)
  */
 function _roundRobin(karten, limit) {
   if (limit <= 0) return []
+
   // Gruppiere nach listenId
   const gruppen = {}
   for (const k of karten) {
@@ -370,19 +380,58 @@ function _roundRobin(karten, limit) {
     if (!gruppen[lid]) gruppen[lid] = []
     gruppen[lid].push(k)
   }
-  const queues = Object.values(gruppen)
-  const ergebnis = []
-  let i = 0
-  while (ergebnis.length < limit) {
-    let fortschritt = false
-    for (const q of queues) {
-      if (ergebnis.length >= limit) break
-      if (i < q.length) { ergebnis.push(q[i]); fortschritt = true }
+
+  const eintraege = Object.values(gruppen)
+  if (eintraege.length === 0) return []
+  if (eintraege.length === 1) return eintraege[0].slice(0, limit)
+
+  const anzahlListen = eintraege.length
+
+  // Schritt 1: Minimum 1 pro Liste reservieren (falls Limit >= Anzahl Listen)
+  const minimum = Math.min(1, Math.floor(limit / anzahlListen))
+  const restLimit = limit - minimum * anzahlListen
+
+  // Schritt 2: Restliche Slots proportional nach Listengröße verteilen
+  const gesamtKarten = eintraege.reduce((s, q) => s + q.length, 0)
+  const slots = eintraege.map(q => {
+    const anteil = gesamtKarten > 0 ? q.length / gesamtKarten : 1 / anzahlListen
+    return minimum + Math.round(anteil * restLimit)
+  })
+
+  // Schritt 3: Rundungsfehler korrigieren (Slots-Summe auf limit bringen)
+  let diff = limit - slots.reduce((s, x) => s + x, 0)
+  // Größte Liste bekommt/verliert die Differenz
+  const groessteIdx = eintraege.reduce((bi, q, i) => q.length > eintraege[bi].length ? i : bi, 0)
+  slots[groessteIdx] = Math.max(minimum, slots[groessteIdx] + diff)
+
+  // Schritt 3b: Ungenutzte Slots umverteilen
+  // Falls eine Liste weniger Karten hat als ihr Slot zuweist,
+  // übrige Slots zur größten Liste addieren
+  for (let i = 0; i < eintraege.length; i++) {
+    const uebrig = slots[i] - eintraege[i].length
+    if (uebrig > 0) {
+      slots[i] = eintraege[i].length   // auf tatsächliche Größe kürzen
+      if (i !== groessteIdx) slots[groessteIdx] += uebrig  // Rest zur größten
     }
-    if (!fortschritt) break
-    i++
   }
-  return ergebnis
+
+  // Schritt 4: Karten aus jeder Liste nehmen
+  const ergebnis = []
+  for (let i = 0; i < eintraege.length; i++) {
+    ergebnis.push(...eintraege[i].slice(0, slots[i]))
+  }
+
+  // Schritt 5: Mischen damit nicht alle Liste-A-Karten zuerst kommen
+  // (Interleave: A[0], B[0], C[0], A[1], B[1], ...)
+  const interleaved = []
+  const maxSlot = Math.max(...slots)
+  for (let i = 0; i < maxSlot; i++) {
+    for (let j = 0; j < eintraege.length; j++) {
+      if (i < slots[j] && eintraege[j][i]) interleaved.push(eintraege[j][i])
+    }
+  }
+
+  return interleaved.slice(0, limit)
 }
 
 /**
