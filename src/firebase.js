@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app'
-import { getFirestore, collection, addDoc, getDocs } from 'firebase/firestore'
+import { getFirestore, collection, addDoc, getDocs, doc, setDoc } from 'firebase/firestore'
 import { getMessaging, getToken, onMessage } from 'firebase/messaging'
+import { DEVICE_ID } from './einstellungen'
 
 const firebaseConfig = {
   apiKey:            import.meta.env.VITE_FIREBASE_API_KEY,
@@ -16,6 +17,10 @@ export const db = getFirestore(app)
 export const messaging = getMessaging(app)
 export { collection, addDoc, getDocs, getToken, onMessage }
 
+/**
+ * Notifications aktivieren + FCM Token in Firestore speichern.
+ * Nutzt DEVICE_ID als Dokument-Key → kein Duplikat möglich.
+ */
 export async function aktiviereNotifications() {
   try {
     const permission = await Notification.requestPermission()
@@ -25,9 +30,11 @@ export async function aktiviereNotifications() {
       vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY
     })
 
-    await addDoc(collection(db, 'fcmTokens'), {
+    // setDoc mit DEVICE_ID als Key → überschreibt bei erneutem Aufruf
+    await setDoc(doc(db, 'fcmTokens', DEVICE_ID), {
       token,
-      erstellt: Date.now()
+      deviceId: DEVICE_ID,
+      geaendert: Date.now()
     })
 
     return token
