@@ -166,13 +166,16 @@ async function ladeFortschritt() {
  * @param {string} richtung  - "en_de" | "de_en" | "abwechselnd"
  * @param {object} profilDaten - { intervall, wiederholungen, stabilitaet, naechsteFaelligkeit, letzteWiederholung }
  */
-export async function speichereFortschritt(vokabelId, richtung, profilDaten) {
+export async function speichereFortschritt(vokabelId, richtung, profilDaten, meta = {}) {
   // Dokument-ID ist immer deterministisch → kein Duplikat möglich
   const docId = `${DEVICE_ID}_${vokabelId}_${richtung}`
   await setDoc(doc(db, 'fortschritt', docId), {
     deviceId: DEVICE_ID,
     vokabelId,
     richtung,
+    // wort + uebersetzung für Server-Notifications mitspeichern
+    wort:         meta.wort         ?? '',
+    uebersetzung: meta.uebersetzung ?? '',
     ...profilDaten
   })
 }
