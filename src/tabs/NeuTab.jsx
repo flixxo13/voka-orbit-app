@@ -4,6 +4,7 @@ import {
   ladeVokabelnFuerListe, vokabelZuListeHinzufuegen,
   vokabelAusListeLoeschen, migriereLegacyVokabeln
 } from '../vokabeln'
+import { speichereEinstellungen } from '../einstellungen'
 
 export default function NeuTab({ einstellungen, setEinstellungen }) {
   const [ansicht, setAnsicht] = useState('listen')    // 'listen' | 'detail' | 'neu'
@@ -131,13 +132,15 @@ export default function NeuTab({ einstellungen, setEinstellungen }) {
     setTimeout(() => setStatus(null), 2500)
   }
 
-  function toggleListeAktiv(listenId) {
+  async function toggleListeAktiv(listenId) {
     if (!einstellungen || !setEinstellungen) return
     const aktiv = einstellungen.aktiveListen ?? []
-    const neu = aktiv.includes(listenId)
+    const neuAktiv = aktiv.includes(listenId)
       ? aktiv.filter(l => l !== listenId)
       : [...aktiv, listenId]
-    setEinstellungen({ ...einstellungen, aktiveListen: neu })
+    const neuEinst = { ...einstellungen, aktiveListen: neuAktiv }
+    setEinstellungen(neuEinst)
+    await speichereEinstellungen(neuEinst)
   }
 
   // ── Ansicht: Neue Liste erstellen ──────────────────────────
