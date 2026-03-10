@@ -114,7 +114,6 @@ export async function toggleListe(aktuelleEinst, listenId) {
   const aktuell = aktuelleEinst.aktiveListen ?? []
   let neu
   if (aktuell.includes(listenId)) {
-    if (aktuell.length <= 1) return aktuelleEinst
     neu = aktuell.filter(id => id !== listenId)
   } else {
     neu = [...aktuell, listenId]
