@@ -40,6 +40,42 @@ const VOKABEL_MODI = [
   { wert: 'zufaellig',      label: '🎲 Zufällig',                beschreibung: 'Zufällige fällige Vokabel' },
 ]
 
+
+const NOTIF_TYPEN = [
+  {
+    key: 'wiederholungen',
+    icon: '🔄',
+    label: 'Fällige Wiederholungen',
+    beschreibung: 'Erinnerung wenn Vokabeln zur Wiederholung fällig sind',
+    defaultAktiv: true,
+    defaultZeiten: [8, 12, 18],
+  },
+  {
+    key: 'neueKarten',
+    icon: '✨',
+    label: 'Neue Karten verfügbar',
+    beschreibung: 'Erinnerung wenn du heute noch neue Karten lernen kannst',
+    defaultAktiv: true,
+    defaultZeiten: [8],
+  },
+  {
+    key: 'streak',
+    icon: '🔥',
+    label: 'Streak-Erinnerung',
+    beschreibung: 'Erinnerung wenn du heute noch nicht gelernt hast',
+    defaultAktiv: true,
+    defaultZeiten: [20],
+  },
+  {
+    key: 'rueckblick',
+    icon: '🌙',
+    label: 'Tagesrückblick',
+    beschreibung: 'Zusammenfassung: was gelernt, was morgen fällig',
+    defaultAktiv: false,
+    defaultZeiten: [21],
+  },
+]
+
 // Auswahl-Karte (Radio-ähnlich)
 function AuswahlKarte({ aktiv, onClick, children }) {
   return (
@@ -77,36 +113,24 @@ export default function EinstellungenTab({
     if (einstellungen) setEinst(einstellungen)
   }, [einstellungen])
 
-  function toggleZeit(wert) {
-    const aktuell = einst.notifZeiten ?? [8, 12, 18]
-    if (aktuell.includes(wert)) {
+  function toggleZeitFuerTyp(typ, z) {
+    const typen = einst.notifTypen ?? {}
+    const typEinst = typen[typ] ?? {}
+    const aktuell = typEinst.zeiten ?? []
+    let neueZeiten
+    if (aktuell.includes(z)) {
       if (aktuell.length <= 1) return
-      setEinst({ ...einst, notifZeiten: aktuell.filter(z => z !== wert) })
+      neueZeiten = aktuell.filter(t => t !== z)
     } else {
-      setEinst({ ...einst, notifZeiten: [...aktuell, wert].sort((a, b) => a - b) })
+      neueZeiten = [...aktuell, z].sort((a, b) => a - b)
     }
+    setEinst({ ...einst, notifTypen: { ...typen, [typ]: { ...typEinst, zeiten: neueZeiten } } })
   }
 
-  async function handleRichtungWechseln(neueRichtung) {
-    if (neueRichtung === einst.lernrichtung) return
-    setRichtungLaed(true)
-    setFehler(null)
-    try {
-      // 1. Profile für neue Richtung anlegen
-      await verarbeiteRichtungswechsel(
-        einst.lernrichtung,
-        neueRichtung,
-        einst.aktiveListen ?? ['en_a1']
-      )
-      // 2. Einstellung speichern
-      const aktualisiert = await aktualisiereLernrichtung(einst, neueRichtung)
-      setEinst(aktualisiert)
-      setEinstellungen(aktualisiert)
-    } catch (err) {
-      setFehler('Fehler beim Wechseln der Richtung — bitte nochmal versuchen')
-      console.error(err)
-    }
-    setRichtungLaed(false)
+  function toggleTypAktiv(typ) {
+    const typen = einst.notifTypen ?? {}
+    const typEinst = typen[typ] ?? {}
+    setEinst({ ...einst, notifTypen: { ...typen, [typ]: { ...typEinst, aktiv: !(typEinst.aktiv ?? true) } } })
   }
 
   async function handleSpeichern() {
@@ -231,31 +255,90 @@ export default function EinstellungenTab({
           <div style={styles.aktivBox}>✅ Notifications sind aktiv</div>
         )}
 
-        {/* Erinnerungszeiten */}
-        <p style={{ ...styles.label, marginTop: 16, marginBottom: 8 }}>Erinnerungszeiten</p>
-        <div style={styles.zeitenGrid}>
-          {ZEITEN_OPTIONEN.map(z => {
-            const aktiv = (einst.notifZeiten ?? []).includes(z)
-            return (
-              <button
-                key={z}
-                onClick={() => toggleZeit(z)}
-                style={{
-                  ...styles.zeitBtn,
-                  borderColor: aktiv ? '#7c3aed' : '#e2e8f0',
-                  background: aktiv ? '#7c3aed' : 'white',
-                  color: aktiv ? 'white' : '#475569',
-                  fontWeight: aktiv ? 700 : 500,
-                }}
-              >
-                {z}:00
-              </button>
-            )
-          })}
-        </div>
+        {/* ── Typ-Karten ── */}
+        <p style={{ ...styles.label, marginTop: 16, marginBottom: 10 }}>
+          Welche Erinnerungen möchtest du?
+        </p>
 
-        {/* Benachrichtigungs-Modus */}
-        <p style={{ ...styles.label, marginTop: 16, marginBottom: 8 }}>
+        {NOTIF_TYPEN.map(typ => {
+          const typEinst = (einst.notifTypen ?? {})[typ.key] ?? { aktiv: typ.defaultAktiv, zeiten: typ.defaultZeiten }
+          const istAktiv = typEinst.aktiv ?? typ.defaultAktiv
+          return (
+            <div key={typ.key} style={{
+              border: `2px solid ${istAktiv ? '#7c3aed' : '#e2e8f0'}`,
+              borderRadius: 14,
+              padding: '0.9rem 1rem',
+              marginBottom: 10,
+              background: istAktiv ? '#faf5ff' : '#f8fafc',
+              transition: 'all 0.15s ease',
+            }}>
+              {/* Header: Titel + Toggle */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700, fontSize: '0.92rem', color: istAktiv ? '#7c3aed' : '#64748b' }}>
+                    {typ.icon} {typ.label}
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: 2 }}>
+                    {typ.beschreibung}
+                  </div>
+                </div>
+                {/* Toggle-Switch */}
+                <div
+                  onClick={() => toggleTypAktiv(typ.key)}
+                  style={{
+                    width: 42, height: 24, borderRadius: 12,
+                    background: istAktiv ? '#7c3aed' : '#cbd5e1',
+                    cursor: 'pointer', position: 'relative',
+                    transition: 'background 0.2s ease', flexShrink: 0, marginLeft: 12,
+                  }}
+                >
+                  <div style={{
+                    position: 'absolute', top: 3,
+                    left: istAktiv ? 20 : 3,
+                    width: 18, height: 18, borderRadius: '50%',
+                    background: 'white', transition: 'left 0.2s ease',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                  }} />
+                </div>
+              </div>
+
+              {/* Zeiten (nur wenn aktiv) */}
+              {istAktiv && (
+                <div style={{ marginTop: 10 }}>
+                  <div style={{ fontSize: '0.78rem', color: '#7c3aed', fontWeight: 600, marginBottom: 6 }}>
+                    Uhrzeiten:
+                  </div>
+                  <div style={styles.zeitenGrid}>
+                    {ZEITEN_OPTIONEN.map(z => {
+                      const zeitAktiv = (typEinst.zeiten ?? []).includes(z)
+                      return (
+                        <button
+                          key={z}
+                          onClick={() => toggleZeitFuerTyp(typ.key, z)}
+                          style={{
+                            ...styles.zeitBtn,
+                            borderColor: zeitAktiv ? '#7c3aed' : '#e2e8f0',
+                            background: zeitAktiv ? '#7c3aed' : 'white',
+                            color: zeitAktiv ? 'white' : '#475569',
+                            fontWeight: zeitAktiv ? 700 : 400,
+                          }}
+                        >
+                          {z}:00
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: 4 }}>
+                    Gewählt: {(typEinst.zeiten ?? []).map(z => `${z}:00`).join(', ')}
+                  </div>
+                </div>
+              )}
+            </div>
+          )
+        })}
+
+        {/* Welche Vokabel */}
+        <p style={{ ...styles.label, marginTop: 12, marginBottom: 8 }}>
           Welche Vokabel in der Meldung?
         </p>
         {VOKABEL_MODI.map(m => (
