@@ -68,7 +68,7 @@ function speichereHeuteNeu(ids) {
 }
 
 // ─────────────────────────────────────────────────────────
-export default function LernenTab({ einstellungen, onSessionEnde }) {
+export default function LernenTab({ einstellungen, onSessionEnde, deepLinkVokabel }) {
   const [laden, setLaden] = useState(true)
   const [sessionKarten, setSessionKarten] = useState([])
   const [index, setIndex] = useState(0)
@@ -90,12 +90,21 @@ export default function LernenTab({ einstellungen, onSessionEnde }) {
         einstellungen ?? {},
         heuteNeu
       )
-      setSessionKarten(session)
+      // Deep Link: Vokabel aus Notification nach vorne schieben
+      let finalSession = session
+      if (deepLinkVokabel) {
+        const idx = session.findIndex(k => k.id === deepLinkVokabel.id)
+        if (idx > 0) {
+          const karte = session[idx]
+          finalSession = [karte, ...session.filter((_, i) => i !== idx)]
+        }
+      }
+      setSessionKarten(finalSession)
       setSessionInfo({ wiederholungAnzahl, neuAnzahl })
       setIndex(0)
       setAufgedeckt(false)
-      if (session.length > 0) {
-        setAktuelleRichtung(waehleSofortigeRichtung(session[0], lernrichtung))
+      if (finalSession.length > 0) {
+        setAktuelleRichtung(waehleSofortigeRichtung(finalSession[0], lernrichtung))
       }
     } catch (err) {
       console.error('Fehler beim Laden:', err)
@@ -126,7 +135,10 @@ export default function LernenTab({ einstellungen, onSessionEnde }) {
     }
 
     const fsrsRichtung = richtung === 'abwechselnd' ? 'abwechselnd' : richtung
-    await speichereFortschritt(karte.id, fsrsRichtung, neuesProfil)
+    await speichereFortschritt(karte.id, fsrsRichtung, neuesProfil, {
+      wort: karte.wort,
+      uebersetzung: karte.uebersetzung,
+    })
 
     setAnimiere(true)
     setTimeout(() => {
