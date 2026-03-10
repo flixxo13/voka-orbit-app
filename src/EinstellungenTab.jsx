@@ -213,3 +213,30 @@ return (
     </div>
   )
 }
+
+
+const styles = {
+  container: { padding: '1.25rem' },
+  sektion: { background: 'white', borderRadius: 20, padding: '1.25rem', marginBottom: 16, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' },
+  sektionTitel: { fontSize: '0.95rem', fontWeight: 800, color: '#1e293b', margin: '0 0 14px', letterSpacing: '-0.01em' },
+  label: { fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', margin: 0 },
+  auswahlBeschreibung: { fontSize: '0.78rem', color: '#94a3b8', margin: '2px 0 0', lineHeight: 1.4 },
+  empfohlenBadge: { fontSize: '0.65rem', fontWeight: 700, background: '#ede9fe', color: '#7c3aed', padding: '1px 6px', borderRadius: 6 },
+  radioKreis: { width: 20, height: 20, borderRadius: '50%', border: '2px solid', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s' },
+  radioKern: { width: 8, height: 8, borderRadius: '50%', background: 'white' },
+  ladeHinweis: { background: '#faf5ff', border: '1px solid #ede9fe', borderRadius: 10, padding: '0.65rem 1rem', fontSize: '0.82rem', color: '#7c3aed', fontWeight: 600, marginBottom: 12, textAlign: 'center' },
+  aktivBox: { background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 12, padding: '0.65rem 1rem', fontSize: '0.88rem', color: '#16a34a', fontWeight: 600, textAlign: 'center' },
+  zeitenGrid: { display: 'flex', flexWrap: 'wrap', gap: 8 },
+  zeitBtn: { padding: '0.4rem 0.8rem', borderRadius: 20, border: '2px solid', fontSize: '0.82rem', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.12s' },
+  statistikGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 },
+  statistikKarte: { background: '#f8fafc', borderRadius: 14, padding: '1rem 0.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 },
+  statistikZahl: { fontSize: '1.8rem', fontWeight: 800, color: '#7c3aed', letterSpacing: '-0.03em', lineHeight: 1 },
+  statistikLabel: { fontSize: '0.72rem', color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' },
+  primaryBtn: { width: '100%', padding: '0.9rem', background: 'linear-gradient(135deg, #7c3aed, #4f46e5)', color: 'white', border: 'none', borderRadius: 14, fontSize: '1rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 16px rgba(124,58,237,0.3)' },
+  gespeichertText: { textAlign: 'center', color: '#16a34a', fontWeight: 700, fontSize: '0.9rem', margin: '8px 0 0' },
+  fehlerBox: { background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 12, padding: '0.75rem 1rem', fontSize: '0.85rem', color: '#dc2626', fontWeight: 600, marginBottom: 12, textAlign: 'center' },
+  sliderWrapper: { display: 'flex', alignItems: 'center', gap: 12 },
+  slider: { flex: 1, accentColor: '#7c3aed', cursor: 'pointer' },
+  sliderWert: { minWidth: 28, fontWeight: 800, fontSize: '1.1rem', color: '#7c3aed', textAlign: 'center' },
+  sliderLabels: { display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: '#cbd5e1', marginTop: 4, padding: '0 2px' },
+}
