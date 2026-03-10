@@ -335,11 +335,11 @@ export function ladeSessionKarten(alleKarten, einstellungen, heuteGesehen = {}) 
       : wiederholungen
 
   // 4. Neue Karten: max. neueKartenProTag, heute noch nicht gesehen
+  // Round-Robin über alle Listen → faire Verteilung bei mehreren aktiven Listen
   const bereitsHeuteNeu = Object.keys(heuteGesehen).length
   const nochErlaubt     = Math.max(0, neueKartenProTag - bereitsHeuteNeu)
-  const neueKarten      = neuKandidaten
-    .filter(k => !heuteGesehen[k.id])
-    .slice(0, nochErlaubt)
+  const neuGefiltert    = neuKandidaten.filter(k => !heuteGesehen[k.id])
+  const neueKarten      = _roundRobin(neuGefiltert, nochErlaubt)
 
   // 5. Session zusammenstellen
   let session
@@ -355,6 +355,34 @@ export function ladeSessionKarten(alleKarten, einstellungen, heuteGesehen = {}) 
     wiederholungAnzahl: wiederholungenGefiltert.length,
     neuAnzahl:          neueKarten.length,
   }
+}
+
+/**
+ * Verteilt neue Karten fair über alle Listen (Round-Robin).
+ * Verhindert dass bei Limit=3 alle 3 aus der ersten Liste kommen.
+ */
+function _roundRobin(karten, limit) {
+  if (limit <= 0) return []
+  // Gruppiere nach listenId
+  const gruppen = {}
+  for (const k of karten) {
+    const lid = k.listenId ?? '__eigen__'
+    if (!gruppen[lid]) gruppen[lid] = []
+    gruppen[lid].push(k)
+  }
+  const queues = Object.values(gruppen)
+  const ergebnis = []
+  let i = 0
+  while (ergebnis.length < limit) {
+    let fortschritt = false
+    for (const q of queues) {
+      if (ergebnis.length >= limit) break
+      if (i < q.length) { ergebnis.push(q[i]); fortschritt = true }
+    }
+    if (!fortschritt) break
+    i++
+  }
+  return ergebnis
 }
 
 /**
