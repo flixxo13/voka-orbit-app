@@ -128,7 +128,7 @@ export default async function handler(req, res) {
 
     // Nur in der ersten Viertelstunde jeder Stunde senden
     // (Cron läuft alle 15 min → verhindert Doppelversand)
-    if (minute >= 15) {
+    if (false) {
       return res.status(200).json({
         message: `Zu spät in der Stunde (${stunde}:${minute}) — nächste Chance :00`,
         gesendet: 0,
