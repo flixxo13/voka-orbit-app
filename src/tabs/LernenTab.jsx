@@ -145,7 +145,11 @@ export default function LernenTab({ einstellungen, onSessionEnde, deepLinkVokabe
         const daten = await res.json()
         setGeminiDaten(daten)
       }
-    } catch (err) { console.error('Gemini Fehler:', err) }
+    } catch (err) {
+      console.error('Gemini Fehler:', err)
+      // Fallback: leeres Objekt damit Box nicht dauerhaft dreht
+      setGeminiDaten(null)
+    }
     setGeminiLaed(false)
   }
 
@@ -330,25 +334,27 @@ export default function LernenTab({ einstellungen, onSessionEnde, deepLinkVokabe
             <p style={styles.karteUebersetzung}>{rueckseite}</p>
 
             {/* Beispielsatz */}
-            <div style={styles.beispielSatzBox}>
-              {geminiLaed && !geminiDaten ? (
-                <div style={styles.geminiLade}>
-                  <div style={styles.geminiSpinner} />
-                  <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>KI generiert...</span>
-                </div>
-              ) : geminiDaten ? (
-                <>
-                  <p style={styles.beispielSatz}>"{geminiDaten.beispielSatz}"</p>
-                  {!satzUebersetzungZeigen ? (
-                    <button onClick={() => setSatzUebersetzungZeigen(true)} style={styles.uebersetzungBtn}>
-                      ▼ Auf Deutsch
-                    </button>
-                  ) : (
-                    <p style={styles.beispielSatzUebersetzung}>„{geminiDaten.beispielSatzUebersetzung}"</p>
-                  )}
-                </>
-              ) : null}
-            </div>
+            {(geminiLaed || geminiDaten) && (
+              <div style={styles.beispielSatzBox}>
+                {geminiLaed && !geminiDaten ? (
+                  <div style={styles.geminiLade}>
+                    <div style={styles.geminiSpinner} />
+                    <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>KI generiert...</span>
+                  </div>
+                ) : geminiDaten ? (
+                  <>
+                    <p style={styles.beispielSatz}>"{geminiDaten.beispielSatz}"</p>
+                    {!satzUebersetzungZeigen ? (
+                      <button onClick={() => setSatzUebersetzungZeigen(true)} style={styles.uebersetzungBtn}>
+                        ▼ Auf Deutsch
+                      </button>
+                    ) : (
+                      <p style={styles.beispielSatzUebersetzung}>„{geminiDaten.beispielSatzUebersetzung}"</p>
+                    )}
+                  </>
+                ) : null}
+              </div>
+            )}
 
             {/* Eselsbrücke */}
             {geminiDaten && (
