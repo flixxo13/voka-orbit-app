@@ -27,7 +27,7 @@ const db = getFirestore()
 
 // ── Gemini Flash aufrufen ─────────────────────────────────
 async function geminiGenerieren({ wort, uebersetzung, richtung, niveau, lernziel }) {
-  const apiKey = process.env.OPENROUTER_API_KEY
+  const apiKey = process.env.GEMINI_API_KEY
   const url = 'https://openrouter.ai/api/v1/chat/completions'
 
   // Richtungsabhängige Prompt-Logik
@@ -66,7 +66,7 @@ Erstelle genau das folgende JSON-Objekt (kein Markdown, keine Erklärung, nur JS
       'HTTP-Referer': 'https://voka-orbit-app.vercel.app',
     },
     body: JSON.stringify({
-      model: 'google/gemini-2.0-flash-exp:free',
+      model: 'deepseek/deepseek-chat-v3-0324:free',
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.7,
       max_tokens: 400,
