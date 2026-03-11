@@ -465,3 +465,4 @@ const styles = {
   heuteHinweis:  { fontSize: '0.78rem', color: '#94a3b8', margin: 0 },
   wiederBtn:     { padding: '0.8rem 2rem', background: 'transparent', border: '2px solid rgba(167,139,250,0.4)', color: '#a78bfa', borderRadius: 12, fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' },
 }
+ 
