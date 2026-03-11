@@ -40,6 +40,12 @@ export const DEFAULT_EINSTELLUNGEN = {
   neueKartenProTag: 10,
   neueKartenModus: 'getrennt',
 
+  // Nutzerprofil (für Gemini)
+  nutzerprofil: {
+    niveau:   'B1',      // A1 | A2 | B1 | B2 | C1
+    lernziel: 'alltag',  // reisen | business | studium | alltag
+  },
+
   // Onboarding
   onboardingAbgeschlossen: false,
 }
