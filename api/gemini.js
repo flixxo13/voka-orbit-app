@@ -101,7 +101,7 @@ export default async function handler(req, res) {
     const cacheRef = db.collection('vokabelHints').doc(cacheKey)
     const cacheSnap = await cacheRef.get()
 
-    if (cacheSnap.exists()) {
+    if (cacheSnap.exists) {
       const cached = cacheSnap.data()
       return res.status(200).json({
         ...cached,
