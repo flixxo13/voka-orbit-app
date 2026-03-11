@@ -1,3 +1,7 @@
+// ============================================================
+// VokaOrbit — api/gemini.js
+// ============================================================
+
 import { initializeApp, cert, getApps } from 'firebase-admin/app'
 import { getFirestore } from 'firebase-admin/firestore'
 
@@ -12,85 +16,120 @@ if (!getApps().length) {
 }
 const db = getFirestore()
 
-async function kiGenerieren(body) {
-  const { wort, uebersetzung, richtung, niveau, lernziel } = body
-  // WICHTIG: Prüfe hier, ob der Name in Vercel exakt übereinstimmt!
-  const apiKey = process.env.OPENROUTER_API_KEY 
-  const url = 'https://openrouter.ai/api/v1/chat/completions'
-  
-  // Aktuelle Gratis-Modelle (Stand März 2026)
-  const models = [
-    'google/gemini-2.0-flash-exp:free',
-    'mistralai/mistral-small-24b-instruct:free',
-    'google/gemma-3-27b:free',
-    'openrouter/auto' // Letzter Rettungsanker: OpenRouter wählt selbst
-  ]
+// ── Modell-Reihenfolge (Free Tier, Stand März 2026) ───────
+const MODELLE = [
+  'deepseek/deepseek-chat-v3-0324:free',
+  'mistralai/mistral-small-24b-instruct:free',
+  'google/gemma-3-27b:free',
+  'meta-llama/llama-4-scout:free',
+]
 
-  const prompt = `Erstelle für die Vokabel "${wort}" (${richtung}) ein JSON-Objekt: 
-  {"beispielSatz": "...", "beispielSatzUebersetzung": "...", "eselsBruecke": "..."}. 
-  Nur das JSON ausgeben, kein Text.`
+async function kiGenerieren({ wort, uebersetzung, richtung, niveau, lernziel }) {
+  const apiKey = process.env.OPENROUTER_API_KEY
+  const url    = 'https://openrouter.ai/api/v1/chat/completions'
 
-  for (const modelId of models) {
+  const vonSprache  = richtung === 'en_de' ? 'Englisch' : 'Deutsch'
+  const nachSprache = richtung === 'en_de' ? 'Deutsch'  : 'Englisch'
+  const lernwort    = richtung === 'en_de' ? wort        : uebersetzung
+  const zielbegriff = richtung === 'en_de' ? uebersetzung : wort
+
+  const lernzielText = {
+    reisen:   'Reisen & Urlaub',
+    business: 'Business & Karriere',
+    studium:  'Studium & Schule',
+    alltag:   'Kultur & Alltag',
+  }[lernziel] ?? 'Alltag'
+
+  const prompt = `Du bist ein Sprachlern-Assistent für deutsche Muttersprachler die ${vonSprache} lernen.
+
+Aufgabe: Erstelle Lernhilfen für die folgende Vokabel.
+
+${vonSprache}es Wort: "${lernwort}"
+${nachSprache} Bedeutung: "${zielbegriff}"
+Niveau: ${niveau ?? 'B1'}
+Kontext: ${lernzielText}
+
+WICHTIG: Der Beispielsatz MUSS das Wort "${lernwort}" exakt so enthalten. Nicht ein ähnliches Wort, nicht eine andere Form — exakt dieses Wort.
+
+Antworte NUR mit diesem JSON, kein Markdown, keine Erklärung:
+{
+  "beispielSatz": "Beispielsatz auf ${vonSprache} mit dem Wort '${lernwort}'",
+  "beispielSatzUebersetzung": "Genaue ${nachSprache} Übersetzung des Satzes",
+  "eselsBruecke": "Kreative deutsche Eselsbrücke: Klang-Ähnlichkeit oder Bild das '${lernwort}' mit '${zielbegriff}' verknüpft. Max 2 Sätze. Immer auf Deutsch!"
+}`
+
+  for (const modell of MODELLE) {
     try {
-      console.log(`📡 TESTE MODELL: ${modelId}`)
+      console.log(`Teste Modell: ${modell}`)
       const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey.trim()}`,
-          'HTTP-Referer': 'https://voka-orbit.vercel.app', // Deine echte URL oder localhost
-          'X-Title': 'VokaOrbit App',
+          'Authorization': `Bearer ${apiKey}`,
+          'HTTP-Referer': 'https://voka-orbit-app.vercel.app',
+          'X-Title': 'VokaOrbit',
         },
         body: JSON.stringify({
-          model: modelId,
+          model: modell,
           messages: [{ role: 'user', content: prompt }],
-          temperature: 0.5, // Etwas niedriger für stabileres JSON
+          temperature: 0.6,
+          max_tokens: 400,
         }),
       })
 
-      if (response.ok) {
-        const data = await response.json()
-        const content = data.choices?.[0]?.message?.content ?? ''
-        const cleanJson = content.replace(/```json|```/g, '').trim()
-        console.log(`✅ ERFOLG mit ${modelId}`)
-        return JSON.parse(cleanJson)
-      } else {
-        const errorText = await response.text()
-        console.error(`❌ FEHLER bei ${modelId}: Status ${response.status} - ${errorText}`)
+      if (!response.ok) {
+        const err = await response.text()
+        console.error(`Fehler bei ${modell}: ${response.status} — ${err}`)
+        continue
       }
-    } catch (e) {
-      console.error(`💥 CRASH bei ${modelId}:`, e.message)
+
+      const data    = await response.json()
+      const content = data.choices?.[0]?.message?.content ?? ''
+      const clean   = content.replace(/```json|```/g, '').trim()
+      const parsed  = JSON.parse(clean)
+      console.log(`Erfolg mit ${modell}`)
+      return parsed
+
+    } catch (err) {
+      console.error(`Crash bei ${modell}: ${err.message}`)
     }
   }
-  throw new Error("Keines der KI-Modelle hat geantwortet. Prüfe deine OpenRouter Keys.")
+
+  throw new Error('Kein Modell verfügbar — bitte später erneut versuchen')
 }
 
+// ── Handler ───────────────────────────────────────────────
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' })
 
+  const { vokabelId, wort, uebersetzung, richtung, niveau, lernziel } = req.body ?? {}
+
+  if (!wort || !uebersetzung || !richtung) {
+    return res.status(400).json({ error: 'wort, uebersetzung und richtung sind Pflichtfelder' })
+  }
+
   try {
-    const { wort, uebersetzung, richtung } = req.body
-    const cacheKey = `${(wort || 'empty').toLowerCase()}_${richtung}`
-    const cacheRef = db.collection('vokabelHints').doc(cacheKey)
+    // Cache prüfen
+    const cacheKey  = `${vokabelId ?? wort.toLowerCase()}_${richtung}`
+    const cacheRef  = db.collection('vokabelHints').doc(cacheKey)
     const cacheSnap = await cacheRef.get()
 
     if (cacheSnap.exists) {
-      console.log("📦 Cache-Treffer!")
       return res.status(200).json({ ...cacheSnap.data(), cached: true })
     }
 
-    const ergebnis = await kiGenerieren(req.body)
-    const finalData = { ...ergebnis, wort, uebersetzung, richtung, erstellt: Date.now() }
-    
-    await cacheRef.set(finalData)
-    return res.status(200).json({ ...finalData, cached: false })
+    // KI aufrufen
+    const ergebnis = await kiGenerieren({ wort, uebersetzung, richtung, niveau, lernziel })
+
+    // Cachen
+    await cacheRef.set({
+      ...ergebnis, wort, uebersetzung, richtung, erstellt: Date.now(),
+    })
+
+    return res.status(200).json({ ...ergebnis, cached: false })
 
   } catch (err) {
-    console.error('API GLOBAL ERROR:', err.message)
-    return res.status(500).json({ 
-      error: 'KI-Fehler', 
-      details: err.message,
-      check: "Schau in die Vercel-Logs (Logs -> Functions) für Details zu Status 401/402."
-    })
+    console.error('gemini.js Fehler:', err.message)
+    return res.status(500).json({ error: err.message })
   }
 }
