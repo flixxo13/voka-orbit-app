@@ -79,6 +79,7 @@ export default function LernenTab({ einstellungen, onSessionEnde, deepLinkVokabe
   const [geminiDaten, setGeminiDaten]   = useState(null)   // { beispielSatz, beispielSatzUebersetzung, eselsBruecke }
   const [geminiLaed, setGeminiLaed]     = useState(false)
   const [geminiGesperrt, setGeminiGesperrt] = useState(false) // Score-Cap durch Hint
+  const [geminiError, setGeminiError]           = useState(null)
   const prefetchRef = useRef(null)
 
   const lernrichtung = einstellungen?.lernrichtung ?? 'smart'
@@ -116,6 +117,7 @@ export default function LernenTab({ einstellungen, onSessionEnde, deepLinkVokabe
     setGeminiDaten(null)
     setGeminiLaed(false)
     setGeminiGesperrt(false)
+    setGeminiError(null)
     prefetchRef.current = null
   }
 
@@ -128,6 +130,7 @@ export default function LernenTab({ einstellungen, onSessionEnde, deepLinkVokabe
   async function ladeGeminiHints(karte, richtung) {
     if (geminiDaten || geminiLaed) return
     setGeminiLaed(true)
+    setGeminiError(null)
     try {
       const res = await fetch('/api/gemini', {
         method: 'POST',
@@ -141,14 +144,14 @@ export default function LernenTab({ einstellungen, onSessionEnde, deepLinkVokabe
           lernziel: nutzerprofil.lernziel,
         }),
       })
+      const daten = await res.json()
       if (res.ok) {
-        const daten = await res.json()
         setGeminiDaten(daten)
+      } else {
+        setGeminiError(`${res.status}: ${daten.error ?? 'Unbekannter Fehler'}`)
       }
     } catch (err) {
-      console.error('Gemini Fehler:', err)
-      // Fallback: leeres Objekt damit Box nicht dauerhaft dreht
-      setGeminiDaten(null)
+      setGeminiError(`Netzwerkfehler: ${err.message}`)
     }
     setGeminiLaed(false)
   }
@@ -356,6 +359,13 @@ export default function LernenTab({ einstellungen, onSessionEnde, deepLinkVokabe
               </div>
             )}
 
+            {/* Gemini Error (Debug) */}
+            {geminiError && (
+              <div style={{ width: '100%', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, padding: '0.6rem 0.8rem', marginBottom: 8 }}>
+                <span style={{ fontSize: '0.75rem', color: '#dc2626', fontWeight: 600 }}>⚠️ KI-Fehler: {geminiError}</span>
+              </div>
+            )}
+
             {/* Eselsbrücke */}
             {geminiDaten && (
               <div style={styles.eselsBrueckeWrapper}>
@@ -465,4 +475,3 @@ const styles = {
   heuteHinweis:  { fontSize: '0.78rem', color: '#94a3b8', margin: 0 },
   wiederBtn:     { padding: '0.8rem 2rem', background: 'transparent', border: '2px solid rgba(167,139,250,0.4)', color: '#a78bfa', borderRadius: 12, fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' },
 }
- 
