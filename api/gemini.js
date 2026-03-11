@@ -27,8 +27,8 @@ const db = getFirestore()
 
 // ── Gemini Flash aufrufen ─────────────────────────────────
 async function geminiGenerieren({ wort, uebersetzung, richtung, niveau, lernziel }) {
-  const apiKey = process.env.GEMINI_API_KEY
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`
+  const apiKey = process.env.OPENROUTER_API_KEY
+  const url = 'https://openrouter.ai/api/v1/chat/completions'
 
   // Richtungsabhängige Prompt-Logik
   const vonSprache = richtung === 'en_de' ? 'Englisch' : 'Deutsch'
@@ -60,13 +60,16 @@ Erstelle genau das folgende JSON-Objekt (kein Markdown, keine Erklärung, nur JS
 
   const response = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+      'HTTP-Referer': 'https://voka-orbit-app.vercel.app',
+    },
     body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: {
-        temperature: 0.7,
-        maxOutputTokens: 300,
-      },
+      model: 'google/gemini-2.0-flash-exp:free',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.7,
+      max_tokens: 400,
     }),
   })
 
@@ -76,9 +79,9 @@ Erstelle genau das folgende JSON-Objekt (kein Markdown, keine Erklärung, nur JS
   }
 
   const data = await response.json()
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+  const text = data.choices?.[0]?.message?.content ?? ''
 
-  // JSON aus Antwort extrahieren (auch wenn Gemini Backticks liefert)
+  // JSON aus Antwort extrahieren (auch wenn Backticks dabei)
   const clean = text.replace(/```json|```/g, '').trim()
   return JSON.parse(clean)
 }
