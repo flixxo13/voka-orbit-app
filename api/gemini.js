@@ -1,18 +1,11 @@
 // ============================================================
-// VokaOrbit — api/gemini.js
-// ============================================================
-// Vercel Serverless Function
-// POST /api/gemini
-//
-// Body: { vokabelId, wort, uebersetzung, richtung, niveau, lernziel }
-// Response: { beispielSatz, beispielSatzUebersetzung, eselsBruecke }
-//
-// Caching: Firestore vokabelHints/{vokabelId}_{richtung}
+// VokaOrbit — api/gemini.js (Optimiert für OpenRouter Free)
 // ============================================================
 
 import { initializeApp, cert, getApps } from 'firebase-admin/app'
 import { getFirestore } from 'firebase-admin/firestore'
 
+// ── Firebase Admin Initialisierung ─────────────────────────
 if (!getApps().length) {
   initializeApp({
     credential: cert({
@@ -25,18 +18,17 @@ if (!getApps().length) {
 
 const db = getFirestore()
 
-// ── Gemini Flash aufrufen ─────────────────────────────────
-async function geminiGenerieren({ wort, uebersetzung, richtung, niveau, lernziel }) {
-  const apiKey = process.env.GEMINI_API_KEY
+// ── KI-Generierung via OpenRouter ──────────────────────────
+async function kiGenerieren({ wort, uebersetzung, richtung, niveau, lernziel }) {
+  // WICHTIG: Nutzt den Key, den du in Vercel als OPENROUTER_API_KEY angelegt hast
+  const apiKey = process.env.OPENROUTER_API_KEY
   const url = 'https://openrouter.ai/api/v1/chat/completions'
 
-  // Richtungsabhängige Prompt-Logik
   const vonSprache = richtung === 'en_de' ? 'Englisch' : 'Deutsch'
   const nachSprache = richtung === 'en_de' ? 'Deutsch' : 'Englisch'
   const lernwort = richtung === 'en_de' ? wort : uebersetzung
   const zielbegriff = richtung === 'en_de' ? uebersetzung : wort
 
-  // Lernziel auf Deutsch
   const lernzielText = {
     reisen:   'Reisen & Urlaub',
     business: 'Business & Karriere',
@@ -44,18 +36,15 @@ async function geminiGenerieren({ wort, uebersetzung, richtung, niveau, lernziel
     alltag:   'Kultur & Alltag',
   }[lernziel] ?? 'Alltag'
 
-  const prompt = `Du bist ein Sprachlern-Assistent für deutsche Muttersprachler die ${vonSprache} lernen.
-
+  const prompt = `Du bist ein Sprachlern-Assistent für deutsche Muttersprachler.
 Vokabel: "${lernwort}" bedeutet auf ${nachSprache} "${zielbegriff}"
-Niveau des Lernenden: ${niveau ?? 'B1'}
-Lernziel: ${lernzielText}
-Lernrichtung: ${vonSprache} → ${nachSprache}
+Niveau: ${niveau ?? 'B1'} | Kontext: ${lernzielText}
 
-Erstelle genau das folgende JSON-Objekt (kein Markdown, keine Erklärung, nur JSON):
+Erstelle genau dieses JSON-Objekt (kein Text drumherum):
 {
-  "beispielSatz": "Ein ${vonSprache}er Beispielsatz mit dem Wort '${lernwort}', angepasst an Niveau ${niveau ?? 'B1'} und Kontext ${lernzielText}. Nicht zu schwer, nicht zu einfach.",
-  "beispielSatzUebersetzung": "Die genaue ${nachSprache} Übersetzung des Beispielsatzes",
-  "eselsBruecke": "Eine kreative deutsche Eselsbrücke die hilft '${lernwort}' mit '${zielbegriff}' zu verknüpfen. Nutze Klang-Ähnlichkeiten, Bilder oder Geschichten. Auf Deutsch! Maximal 2 Sätze."
+  "beispielSatz": "Ein Beispielsatz in ${vonSprache} mit '${lernwort}', Niveau ${niveau ?? 'B1'}.",
+  "beispielSatzUebersetzung": "Deutsche Übersetzung des Satzes",
+  "eselsBruecke": "Eine kreative deutsche Eselsbrücke (Klang/Bild), max. 2 Sätze."
 }`
 
   const response = await fetch(url, {
@@ -64,59 +53,56 @@ Erstelle genau das folgende JSON-Objekt (kein Markdown, keine Erklärung, nur JS
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${apiKey}`,
       'HTTP-Referer': 'https://voka-orbit-app.vercel.app',
+      'X-Title': 'VokaOrbit',
     },
     body: JSON.stringify({
-      model: 'deepseek/deepseek-chat-v3-0324:free',
+      // Nutzt das kostenlose Gemini 2.0 Modell über OpenRouter
+      model: 'google/gemini-2.0-flash-exp:free', 
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.7,
-      max_tokens: 400,
     }),
   })
 
   if (!response.ok) {
-    const err = await response.text()
-    throw new Error(`Gemini API Fehler: ${response.status} — ${err}`)
+    const errText = await response.text()
+    throw new Error(`OpenRouter Fehler: ${response.status} — ${errText}`)
   }
 
   const data = await response.json()
-  const text = data.choices?.[0]?.message?.content ?? ''
+  const content = data.choices?.[0]?.message?.content ?? ''
 
-  // JSON aus Antwort extrahieren (auch wenn Backticks dabei)
-  const clean = text.replace(/```json|```/g, '').trim()
-  return JSON.parse(clean)
+  // Bereinigt Markdown-Code-Blöcke, falls die KI welche mitsendet
+  const cleanJson = content.replace(/```json|```/g, '').trim()
+  return JSON.parse(cleanJson)
 }
 
-// ── Haupt-Handler ─────────────────────────────────────────
+// ── Haupt-Handler (API Route) ──────────────────────────────
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' })
+    return res.status(405).json({ error: 'Nur POST erlaubt' })
   }
 
   const { vokabelId, wort, uebersetzung, richtung, niveau, lernziel } = req.body ?? {}
 
-  if (!wort || !uebersetzung || !richtung) {
-    return res.status(400).json({ error: 'wort, uebersetzung und richtung sind Pflichtfelder' })
+  if (!wort || !uebersetzung) {
+    return res.status(400).json({ error: 'Fehlende Daten (wort/uebersetzung)' })
   }
 
   try {
-    // ── 1. Cache prüfen ──────────────────────────────────
-    const cacheKey = `${vokabelId ?? wort}_${richtung}`
+    // 1. Im Firestore-Cache nachsehen
+    const cacheKey = `${vokabelId || wort.toLowerCase()}_${richtung}`
     const cacheRef = db.collection('vokabelHints').doc(cacheKey)
     const cacheSnap = await cacheRef.get()
 
     if (cacheSnap.exists) {
-      const cached = cacheSnap.data()
-      return res.status(200).json({
-        ...cached,
-        cached: true,
-      })
+      return res.status(200).json({ ...cacheSnap.data(), cached: true })
     }
 
-    // ── 2. Gemini aufrufen ───────────────────────────────
-    const ergebnis = await geminiGenerieren({ wort, uebersetzung, richtung, niveau, lernziel })
+    // 2. Neue Daten generieren
+    const ergebnis = await kiGenerieren({ wort, uebersetzung, richtung, niveau, lernziel })
 
-    // ── 3. In Firestore cachen ───────────────────────────
-    await cacheRef.set({
+    // 3. Ergebnis für die Zukunft speichern
+    const safeData = {
       beispielSatz: ergebnis.beispielSatz,
       beispielSatzUebersetzung: ergebnis.beispielSatzUebersetzung,
       eselsBruecke: ergebnis.eselsBruecke,
@@ -124,15 +110,13 @@ export default async function handler(req, res) {
       uebersetzung,
       richtung,
       erstellt: Date.now(),
-    })
+    }
+    await cacheRef.set(safeData)
 
-    return res.status(200).json({
-      ...ergebnis,
-      cached: false,
-    })
+    return res.status(200).json({ ...safeData, cached: false })
 
   } catch (err) {
-    console.error('gemini.js Fehler:', err)
-    return res.status(500).json({ error: err.message })
+    console.error('VokaOrbit API Error:', err.message)
+    return res.status(500).json({ error: 'KI-Generierung fehlgeschlagen', details: err.message })
   }
 }
