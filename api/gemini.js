@@ -1,7 +1,3 @@
-// ============================================================
-// VokaOrbit — api/gemini.js (DEBUG & FALLBACK VERSION)
-// ============================================================
-
 import { initializeApp, cert, getApps } from 'firebase-admin/app'
 import { getFirestore } from 'firebase-admin/firestore'
 
@@ -14,42 +10,41 @@ if (!getApps().length) {
     }),
   })
 }
-
 const db = getFirestore()
 
-async function kiGenerieren({ wort, uebersetzung, richtung, niveau, lernziel }) {
-  const apiKey = process.env.OPENROUTER_API_KEY
-  
-  if (!apiKey) {
-    throw new Error("API-Key fehlt! Bitte in Vercel 'OPENROUTER_API_KEY' anlegen und neu deployen.")
-  }
-
+async function kiGenerieren(body) {
+  const { wort, uebersetzung, richtung, niveau, lernziel } = body
+  // WICHTIG: Prüfe hier, ob der Name in Vercel exakt übereinstimmt!
+  const apiKey = process.env.OPENROUTER_API_KEY 
   const url = 'https://openrouter.ai/api/v1/chat/completions'
   
-  // Liste an kostenlosen Modellen (Fallback-Strategie für 2026)
+  // Aktuelle Gratis-Modelle (Stand März 2026)
   const models = [
     'google/gemini-2.0-flash-exp:free',
     'mistralai/mistral-small-24b-instruct:free',
-    'google/gemma-3-27b:free'
+    'google/gemma-3-27b:free',
+    'openrouter/auto' // Letzter Rettungsanker: OpenRouter wählt selbst
   ]
 
-  const prompt = `Du bist Sprach-Assistent. Vokabel: "${wort}" (${richtung}). Erstelle JSON: {"beispielSatz": "...", "beispielSatzUebersetzung": "...", "eselsBruecke": "..."}`
+  const prompt = `Erstelle für die Vokabel "${wort}" (${richtung}) ein JSON-Objekt: 
+  {"beispielSatz": "...", "beispielSatzUebersetzung": "...", "eselsBruecke": "..."}. 
+  Nur das JSON ausgeben, kein Text.`
 
   for (const modelId of models) {
     try {
-      console.log(`Versuche Modell: ${modelId}...`)
+      console.log(`📡 TESTE MODELL: ${modelId}`)
       const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
-          'HTTP-Referer': 'https://voka-orbit-app.vercel.app',
-          'X-Title': 'VokaOrbit',
+          'Authorization': `Bearer ${apiKey.trim()}`,
+          'HTTP-Referer': 'https://voka-orbit.vercel.app', // Deine echte URL oder localhost
+          'X-Title': 'VokaOrbit App',
         },
         body: JSON.stringify({
           model: modelId,
           messages: [{ role: 'user', content: prompt }],
-          temperature: 0.7,
+          temperature: 0.5, // Etwas niedriger für stabileres JSON
         }),
       })
 
@@ -57,42 +52,45 @@ async function kiGenerieren({ wort, uebersetzung, richtung, niveau, lernziel }) 
         const data = await response.json()
         const content = data.choices?.[0]?.message?.content ?? ''
         const cleanJson = content.replace(/```json|```/g, '').trim()
+        console.log(`✅ ERFOLG mit ${modelId}`)
         return JSON.parse(cleanJson)
+      } else {
+        const errorText = await response.text()
+        console.error(`❌ FEHLER bei ${modelId}: Status ${response.status} - ${errorText}`)
       }
     } catch (e) {
-      console.error(`Fehler mit ${modelId}:`, e.message)
-      continue // Probiere das nächste Modell in der Liste
+      console.error(`💥 CRASH bei ${modelId}:`, e.message)
     }
   }
-  
-  throw new Error("Alle kostenlosen Modelle sind derzeit nicht erreichbar.")
+  throw new Error("Keines der KI-Modelle hat geantwortet. Prüfe deine OpenRouter Keys.")
 }
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).send('Method not allowed')
+  if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' })
 
   try {
     const { wort, uebersetzung, richtung } = req.body
-    
-    // Cache Check
-    const cacheKey = `${wort.toLowerCase()}_${richtung}`
+    const cacheKey = `${(wort || 'empty').toLowerCase()}_${richtung}`
     const cacheRef = db.collection('vokabelHints').doc(cacheKey)
     const cacheSnap = await cacheRef.get()
 
     if (cacheSnap.exists) {
+      console.log("📦 Cache-Treffer!")
       return res.status(200).json({ ...cacheSnap.data(), cached: true })
     }
 
     const ergebnis = await kiGenerieren(req.body)
-    await cacheRef.set({ ...ergebnis, erstellt: Date.now() })
+    const finalData = { ...ergebnis, wort, uebersetzung, richtung, erstellt: Date.now() }
+    
+    await cacheRef.set(finalData)
+    return res.status(200).json({ ...finalData, cached: false })
 
-    return res.status(200).json({ ...ergebnis, cached: false })
   } catch (err) {
-    // Hier geben wir jetzt die exakte Fehlermeldung nach außen, damit du siehst, was schiefläuft
+    console.error('API GLOBAL ERROR:', err.message)
     return res.status(500).json({ 
       error: 'KI-Fehler', 
       details: err.message,
-      hint: "Hast du nach dem Hinzufügen des Keys in Vercel neu deployt?"
+      check: "Schau in die Vercel-Logs (Logs -> Functions) für Details zu Status 401/402."
     })
   }
 }
