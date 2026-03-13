@@ -1,104 +1,54 @@
-import { useState, useEffect } from 'react'
-import { ladeEinstellungen } from './einstellungen'
-import { aktiviereNotifications } from './firebase'
-import { ladeAlleKarten } from './vokabeln'
-import { sindFaellig } from './fsrs'
+// ============================================================
+// VokaOrbit — App.jsx
+// Dünne Shell: Layout + Navigation + Tab-Routing.
+// Kein Daten-State mehr — alles in EinstellungenProvider.
+// ============================================================
 
-import Onboarding from './components/Onboarding'
-import LernenTab from './tabs/LernenTab'
-import NeuTab from './tabs/NeuTab'
-import EntdeckenTab from './tabs/EntdeckenTab'
+import { useState } from 'react'
+import { EinstellungenProvider, useEinstellungen } from './hooks/useEinstellungen'
+import { spinnerCSS } from './design/globalStyles'
+import { tokens } from './design/tokens'
+
+import Onboarding       from './components/Onboarding'
+import LernenTab        from './tabs/LernenTab'
+import NeuTab           from './tabs/NeuTab'
+import EntdeckenTab     from './tabs/EntdeckenTab'
 import EinstellungenTab from './tabs/EinstellungenTab'
 
 const TABS = [
-  { id: 'lernen',       label: 'Lernen',     icon: '🧠' },
-  { id: 'neu',          label: 'Neu',        icon: '➕' },
-  { id: 'entdecken',    label: 'Entdecken',  icon: '📚' },
-  { id: 'einstellungen',label: 'Einst.',     icon: '⚙️' },
+  { id: 'lernen',        label: 'Lernen',   icon: '🧠' },
+  { id: 'neu',           label: 'Neu',      icon: '➕' },
+  { id: 'entdecken',     label: 'Entdecken',icon: '📚' },
+  { id: 'einstellungen', label: 'Einst.',   icon: '⚙️' },
 ]
 
+// ── App-Wurzel: Provider wrappen ──────────────────────────────
 export default function App() {
-  const [einstellungen, setEinstellungen] = useState(null)
-  const [aktuellerTab, setAktuellerTab] = useState('lernen')
-  const [notifAktiv, setNotifAktiv] = useState(false)
-  const [statistik, setStatistik] = useState({ gesamt: 0, faellig: 0, gelernt: 0 })
-  const [faelligAnzahl, setFaelligAnzahl] = useState(0)
-  const [laden, setLaden] = useState(true)
-
+  const [aktuellerTab,   setAktuellerTab]   = useState('lernen')
   const [deepLinkVokabel, setDeepLinkVokabel] = useState(null)
 
-  // App initialisieren
-  useEffect(() => {
-    async function init() {
-      const einst = await ladeEinstellungen()
-      setEinstellungen(einst)
-      setNotifAktiv(Notification.permission === 'granted')
+  return (
+    <EinstellungenProvider onDeepLink={setDeepLinkVokabel}>
+      <AppInhalt
+        aktuellerTab={aktuellerTab}
+        setAktuellerTab={setAktuellerTab}
+        deepLinkVokabel={deepLinkVokabel}
+      />
+    </EinstellungenProvider>
+  )
+}
 
-      // Deep Link aus Notification: ?vokabel=en_a1_042&richtung=en_de
-      const params = new URLSearchParams(window.location.search)
-      const vokabelId = params.get('vokabel')
-      const richtung  = params.get('richtung')
-      if (vokabelId) {
-        setDeepLinkVokabel({ id: vokabelId, richtung: richtung ?? 'en_de' })
-        setAktuellerTab('lernen')
-        // URL aufräumen ohne Reload
-        window.history.replaceState({}, '', window.location.pathname)
-      }
+// ── Haupt-UI (hat Zugriff auf Context) ───────────────────────
+function AppInhalt({ aktuellerTab, setAktuellerTab, deepLinkVokabel }) {
+  const {
+    einstellungen,
+    laden,
+    faelligAnzahl,
+    handleOnboardingAbschluss,
+    ladeStatistik,
+  } = useEinstellungen()
 
-      setLaden(false)
-    }
-    init()
-  }, [])
-
-  // Statistik laden wenn Einstellungen bereit
-  useEffect(() => {
-    if (!einstellungen?.onboardingAbgeschlossen) return
-    ladeStatistik()
-  }, [einstellungen?.aktiveListen, einstellungen?.lernrichtung])
-
-  async function ladeStatistik() {
-    try {
-      const { alleKarten, lernkarten } = await ladeAlleKarten(
-        einstellungen.aktiveListen ?? ['en_a1'],
-        einstellungen.lernrichtung ?? 'smart'
-      )
-      const faellig = sindFaellig(lernkarten, einstellungen.lernrichtung ?? 'smart')
-      const gelernt = alleKarten.filter(k =>
-        k.profil_en_de?.wiederholungen > 0 ||
-        k.profil_de_en?.wiederholungen > 0 ||
-        k.profil_abwechselnd?.wiederholungen > 0
-      ).length
-
-      setStatistik({
-        gesamt: alleKarten.length,
-        faellig: faellig.length,
-        gelernt,
-      })
-      setFaelligAnzahl(faellig.length)
-    } catch (err) {
-      console.error('Statistik-Fehler:', err)
-    }
-  }
-
-  async function handleNotifAktivieren() {
-    const token = await aktiviereNotifications()
-    if (token) setNotifAktiv(true)
-  }
-
-  function handleEinstellungenAktualisieren(neu) {
-    setEinstellungen(neu)
-  }
-
-  // Onboarding abschließen
-  function handleOnboardingAbschluss(ersteEinst) {
-    setEinstellungen(prev => ({
-      ...prev,
-      ...ersteEinst,
-      onboardingAbgeschlossen: true,
-    }))
-  }
-
-  // Ladescreen
+  // ── Ladescreen ────────────────────────────────────────────
   if (laden) {
     return (
       <div style={styles.ladeScreen}>
@@ -112,7 +62,7 @@ export default function App() {
     )
   }
 
-  // Onboarding
+  // ── Onboarding ────────────────────────────────────────────
   if (!einstellungen?.onboardingAbgeschlossen) {
     return (
       <>
@@ -122,7 +72,7 @@ export default function App() {
     )
   }
 
-  // Hauptapp
+  // ── Hauptapp ──────────────────────────────────────────────
   return (
     <div style={styles.app}>
       <style>{spinnerCSS}</style>
@@ -139,9 +89,7 @@ export default function App() {
             </p>
           </div>
           {faelligAnzahl > 0 && (
-            <div style={styles.faelligBadge}>
-              {faelligAnzahl}
-            </div>
+            <div style={styles.faelligBadge}>{faelligAnzahl}</div>
           )}
         </div>
       </header>
@@ -150,29 +98,13 @@ export default function App() {
       <main style={styles.main}>
         {aktuellerTab === 'lernen' && (
           <LernenTab
-              deepLinkVokabel={deepLinkVokabel}
-            einstellungen={einstellungen}
+            deepLinkVokabel={deepLinkVokabel}
             onSessionEnde={ladeStatistik}
           />
         )}
-        {aktuellerTab === 'neu' && (
-          <NeuTab einstellungen={einstellungen} setEinstellungen={handleEinstellungenAktualisieren} />
-        )}
-        {aktuellerTab === 'entdecken' && (
-          <EntdeckenTab
-            einstellungen={einstellungen}
-            setEinstellungen={handleEinstellungenAktualisieren}
-          />
-        )}
-        {aktuellerTab === 'einstellungen' && (
-          <EinstellungenTab
-            einstellungen={einstellungen}
-            setEinstellungen={handleEinstellungenAktualisieren}
-            notifAktiv={notifAktiv}
-            handleNotifAktivieren={handleNotifAktivieren}
-            statistik={statistik}
-          />
-        )}
+        {aktuellerTab === 'neu'           && <NeuTab />}
+        {aktuellerTab === 'entdecken'     && <EntdeckenTab />}
+        {aktuellerTab === 'einstellungen' && <EinstellungenTab />}
       </main>
 
       {/* ── Bottom Navigation ── */}
@@ -186,29 +118,24 @@ export default function App() {
                 setAktuellerTab(tab.id)
                 if (tab.id === 'lernen') ladeStatistik()
               }}
-              style={{
-                ...styles.navBtn,
-                color: aktiv ? '#7c3aed' : '#94a3b8',
-              }}
+              style={{ ...styles.navBtn, color: aktiv ? tokens.colors.primary : tokens.colors.textMuted }}
             >
               <span style={{
                 ...styles.navIcon,
-                filter: aktiv ? 'none' : 'grayscale(1) opacity(0.5)',
+                filter:    aktiv ? 'none' : 'grayscale(1) opacity(0.5)',
                 transform: aktiv ? 'scale(1.15)' : 'scale(1)',
-                transition: 'transform 0.15s ease',
+                transition: tokens.transition.default,
               }}>
                 {tab.icon}
               </span>
               <span style={{
                 ...styles.navLabel,
                 fontWeight: aktiv ? 700 : 500,
-                color: aktiv ? '#7c3aed' : '#94a3b8',
+                color: aktiv ? tokens.colors.primary : tokens.colors.textMuted,
               }}>
                 {tab.label}
               </span>
-              {/* Aktiv-Linie */}
               {aktiv && <div style={styles.navAktivLinie} />}
-              {/* Fällig-Punkt beim Lernen-Tab */}
               {tab.id === 'lernen' && faelligAnzahl > 0 && !aktiv && (
                 <div style={styles.navPunkt} />
               )}
@@ -216,34 +143,15 @@ export default function App() {
           )
         })}
       </nav>
-
     </div>
   )
 }
 
-// ─── CSS für Spinner-Animation ──────────────────────────────
-const spinnerCSS = `
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-  }
-  * { -webkit-tap-highlight-color: transparent; }
-  input:focus {
-    border-color: #7c3aed !important;
-    box-shadow: 0 0 0 3px rgba(124,58,237,0.1);
-  }
-  button:active { transform: scale(0.97); }
-`
-
-// ─── Styles ────────────────────────────────────────────────
+// ── Styles ────────────────────────────────────────────────────
 const styles = {
-  // Ladescreen
   ladeScreen: {
     minHeight: '100vh',
-    background: 'linear-gradient(160deg, #0f0c29, #302b63)',
+    background: tokens.colors.gradientSpace,
     display: 'flex', alignItems: 'center', justifyContent: 'center',
   },
   ladeInhalt: {
@@ -252,30 +160,26 @@ const styles = {
   },
   ladeLogo: { fontSize: '3rem' },
   ladeName: {
-    color: 'white', fontWeight: 800,
-    fontSize: '1.5rem', margin: 0, letterSpacing: '-0.02em',
+    color: 'white', fontWeight: tokens.font.weight.extrabold,
+    fontSize: '1.5rem', margin: 0, letterSpacing: tokens.font.tracking.tight,
   },
   ladeSpinner: {
     width: 32, height: 32, borderRadius: '50%',
-    border: '3px solid rgba(167,139,250,0.2)',
-    borderTop: '3px solid #a78bfa',
+    border: `3px solid rgba(167,139,250,0.2)`,
+    borderTop: `3px solid ${tokens.colors.primaryViolet}`,
     animation: 'spin 0.8s linear infinite',
     marginTop: 8,
   },
-
-  // App-Container
   app: {
     maxWidth: 480, margin: '0 auto',
     minHeight: '100vh',
-    background: '#f1f5f9',
+    background: tokens.colors.bg,
     display: 'flex', flexDirection: 'column',
-    fontFamily: "'system-ui', '-apple-system', sans-serif",
+    fontFamily: tokens.font.family,
     position: 'relative',
   },
-
-  // Header
   header: {
-    background: 'linear-gradient(135deg, #7c3aed, #4f46e5)',
+    background: tokens.colors.gradient,
     padding: '1rem 1.25rem 0.9rem',
     flexShrink: 0,
   },
@@ -283,38 +187,34 @@ const styles = {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
   },
   headerTitel: {
-    margin: 0, fontSize: '1.25rem', fontWeight: 800,
-    color: 'white', letterSpacing: '-0.02em',
+    margin: 0, fontSize: tokens.font.size.xxl, fontWeight: tokens.font.weight.extrabold,
+    color: 'white', letterSpacing: tokens.font.tracking.tight,
   },
   headerUntertitel: {
-    margin: '2px 0 0', fontSize: '0.78rem',
-    color: 'rgba(255,255,255,0.65)', fontWeight: 500,
+    margin: '2px 0 0', fontSize: tokens.font.size.base,
+    color: 'rgba(255,255,255,0.65)', fontWeight: tokens.font.weight.medium,
   },
   faelligBadge: {
-    background: '#fbbf24', color: '#1e293b',
+    background: tokens.colors.badge, color: tokens.colors.textDark,
     borderRadius: '50%', width: 30, height: 30,
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    fontSize: '0.85rem', fontWeight: 800,
-    boxShadow: '0 2px 8px rgba(251,191,36,0.4)',
+    fontSize: '0.85rem', fontWeight: tokens.font.weight.extrabold,
+    boxShadow: tokens.shadow.badge,
   },
-
-  // Main
   main: {
     flex: 1,
     overflowY: 'auto',
-    paddingBottom: 80, // Platz für Bottom Nav
+    paddingBottom: 80,
   },
-
-  // Bottom Navigation
   nav: {
     position: 'fixed', bottom: 0, left: '50%',
     transform: 'translateX(-50%)',
     width: '100%', maxWidth: 480,
-    background: 'white',
-    borderTop: '1px solid #e2e8f0',
+    background: tokens.colors.surface,
+    borderTop: `1px solid ${tokens.colors.border}`,
     display: 'flex',
-    boxShadow: '0 -4px 20px rgba(0,0,0,0.08)',
-    zIndex: 100,
+    boxShadow: tokens.shadow.nav,
+    zIndex: tokens.z.nav,
   },
   navBtn: {
     flex: 1, display: 'flex', flexDirection: 'column',
@@ -325,19 +225,16 @@ const styles = {
     gap: 3,
   },
   navIcon: { fontSize: '1.3rem', display: 'block' },
-  navLabel: {
-    fontSize: '0.65rem', display: 'block',
-    letterSpacing: '0.01em',
-  },
+  navLabel: { fontSize: '0.65rem', display: 'block', letterSpacing: '0.01em' },
   navAktivLinie: {
     position: 'absolute', bottom: 0, left: '20%', right: '20%',
     height: 3, borderRadius: '3px 3px 0 0',
-    background: 'linear-gradient(90deg, #7c3aed, #4f46e5)',
+    background: tokens.colors.gradient,
   },
   navPunkt: {
     position: 'absolute', top: 8, right: '24%',
     width: 7, height: 7, borderRadius: '50%',
-    background: '#f97316',
-    boxShadow: '0 0 0 2px white',
+    background: tokens.colors.streak,
+    boxShadow: `0 0 0 2px ${tokens.colors.surface}`,
   },
 }
