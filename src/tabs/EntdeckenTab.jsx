@@ -1,6 +1,14 @@
+// ============================================================
+// VokaOrbit — tabs/EntdeckenTab.jsx
+// Vokabellisten entdecken und aktivieren/deaktivieren.
+// Nutzt useEinstellungen() Context statt Props.
+// ============================================================
+
 import { useState, useEffect } from 'react'
+import { useEinstellungen } from '../hooks/useEinstellungen'
 import { toggleListe } from '../einstellungen'
-import { ladeEigeneListen } from '../vokabeln'
+import { ladeEigeneListen } from '../core/listen'
+import { tokens } from '../design/tokens'
 
 const NIVEAU_FARBE = {
   A1: { bg: '#dcfce7', text: '#16a34a', border: '#bbf7d0' },
@@ -11,9 +19,9 @@ const NIVEAU_FARBE = {
 }
 
 function NiveauBadge({ niveau }) {
-  const farbe = NIVEAU_FARBE[niveau] ?? { bg: '#f1f5f9', text: '#64748b', border: '#e2e8f0' }
+  const farbe = NIVEAU_FARBE[niveau] ?? { bg: tokens.colors.borderLight, text: tokens.colors.textLight, border: tokens.colors.border }
   return (
-    <span style={{ background: farbe.bg, color: farbe.text, border: `1px solid ${farbe.border}`, borderRadius: 8, padding: '2px 10px', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.04em' }}>
+    <span style={{ background: farbe.bg, color: farbe.text, border: `1px solid ${farbe.border}`, borderRadius: tokens.radius.sm, padding: '2px 10px', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.04em' }}>
       {niveau}
     </span>
   )
@@ -21,7 +29,7 @@ function NiveauBadge({ niveau }) {
 
 function VorschauModal({ liste, aktiv, onSchliessen, onToggle }) {
   const [vokabeln, setVokabeln] = useState([])
-  const [laden, setLaden] = useState(true)
+  const [laden,    setLaden]    = useState(true)
 
   useEffect(() => {
     async function lade() {
@@ -51,7 +59,7 @@ function VorschauModal({ liste, aktiv, onSchliessen, onToggle }) {
         </div>
         <div style={styles.vorschauListe}>
           {laden ? (
-            <p style={{ color: '#94a3b8', padding: '1rem', textAlign: 'center', fontSize: '0.9rem' }}>Lädt...</p>
+            <p style={{ color: tokens.colors.textMuted, padding: '1rem', textAlign: 'center', fontSize: '0.9rem' }}>Lädt...</p>
           ) : (
             vokabeln.map((v, i) => (
               <div key={i} style={styles.vorschauItem}>
@@ -65,7 +73,11 @@ function VorschauModal({ liste, aktiv, onSchliessen, onToggle }) {
             <p style={styles.vorschauMehr}>+ {liste.anzahl - vokabeln.length} weitere Vokabeln...</p>
           )}
         </div>
-        <button onClick={onToggle} style={{ ...styles.toggleBtn, background: aktiv ? 'linear-gradient(135deg, #ef4444, #dc2626)' : 'linear-gradient(135deg, #7c3aed, #4f46e5)', boxShadow: aktiv ? '0 4px 16px rgba(239,68,68,0.3)' : '0 4px 16px rgba(124,58,237,0.3)' }}>
+        <button onClick={onToggle} style={{
+          ...styles.toggleBtn,
+          background: aktiv ? 'linear-gradient(135deg, #ef4444, #dc2626)' : tokens.colors.gradient,
+          boxShadow:  aktiv ? '0 4px 16px rgba(239,68,68,0.3)' : tokens.shadow.primary,
+        }}>
           {aktiv ? '✕ Liste deaktivieren' : '✓ Liste aktivieren'}
         </button>
       </div>
@@ -73,12 +85,15 @@ function VorschauModal({ liste, aktiv, onSchliessen, onToggle }) {
   )
 }
 
-export default function EntdeckenTab({ einstellungen, setEinstellungen }) {
-  const [index, setIndex]           = useState(null)
-  const [listen, setListen]         = useState([])
+export default function EntdeckenTab() {
+  // Context statt Props
+  const { einstellungen, setEinstellungen } = useEinstellungen()
+
+  const [index,        setIndex]        = useState(null)
+  const [listen,       setListen]       = useState([])
   const [eigeneListen, setEigeneListen] = useState([])
-  const [laden, setLaden]           = useState(true)
-  const [toggleAnim, setToggleAnim] = useState(null)
+  const [laden,        setLaden]        = useState(true)
+  const [toggleAnim,   setToggleAnim]   = useState(null)
 
   const aktiveListen = einstellungen?.aktiveListen ?? ['en_a1']
 
@@ -107,14 +122,12 @@ export default function EntdeckenTab({ einstellungen, setEinstellungen }) {
 
   function toggleEigeneListe(listenId) {
     const aktiv = aktiveListen.includes(listenId)
-    const neu = aktiv
-      ? aktiveListen.filter(l => l !== listenId)
-      : [...aktiveListen, listenId]
+    const neu   = aktiv ? aktiveListen.filter(l => l !== listenId) : [...aktiveListen, listenId]
     setEinstellungen({ ...einstellungen, aktiveListen: neu })
   }
 
   if (laden) {
-    return <div style={styles.container}><p style={{ color: '#94a3b8', textAlign: 'center', padding: '3rem', fontSize: '0.9rem' }}>Lädt Listen...</p></div>
+    return <div style={styles.container}><p style={{ color: tokens.colors.textMuted, textAlign: 'center', padding: '3rem', fontSize: '0.9rem' }}>Lädt Listen...</p></div>
   }
 
   const nachSprache = {}
@@ -127,7 +140,6 @@ export default function EntdeckenTab({ einstellungen, setEinstellungen }) {
 
   return (
     <div style={styles.container}>
-
       <div style={styles.pageHeader}>
         <h2 style={styles.pageTitel}>📚 Vokabellisten</h2>
         <p style={styles.pageUntertitel}>Wähle welche Listen du lernen möchtest</p>
@@ -144,11 +156,17 @@ export default function EntdeckenTab({ einstellungen, setEinstellungen }) {
             </span>
           </div>
           {sprachListen.map(liste => {
-            const istAktiv = aktiveListen.includes(liste.id)
+            const istAktiv  = aktiveListen.includes(liste.id)
             const istGlobal = listen.indexOf(liste)
-            const animiert = toggleAnim === liste.id
+            const animiert  = toggleAnim === liste.id
             return (
-              <div key={liste.id} onClick={() => setIndex(istGlobal)} style={{ ...styles.listenKarte, borderColor: istAktiv ? '#a78bfa' : '#e2e8f0', background: istAktiv ? '#faf5ff' : 'white', transform: animiert ? 'scale(0.97)' : 'scale(1)', transition: 'all 0.2s ease' }}>
+              <div key={liste.id} onClick={() => setIndex(istGlobal)} style={{
+                ...styles.listenKarte,
+                borderColor: istAktiv ? tokens.colors.primaryViolet : tokens.colors.border,
+                background:  istAktiv ? tokens.colors.primaryBg : tokens.colors.surface,
+                transform:   animiert ? 'scale(0.97)' : 'scale(1)',
+                transition:  tokens.transition.slow,
+              }}>
                 <div style={styles.listenKarteLinks}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                     <NiveauBadge niveau={liste.niveau} />
@@ -157,7 +175,7 @@ export default function EntdeckenTab({ einstellungen, setEinstellungen }) {
                   <p style={styles.listenBeschreibung}>{liste.beschreibung}</p>
                   <p style={styles.listenAnzahl}>{liste.anzahl} Vokabeln</p>
                 </div>
-                <div onClick={e => { e.stopPropagation(); handleToggle(liste.id) }} style={{ ...styles.toggleSwitch, background: istAktiv ? 'linear-gradient(135deg, #7c3aed, #4f46e5)' : '#e2e8f0' }}>
+                <div onClick={e => { e.stopPropagation(); handleToggle(liste.id) }} style={{ ...styles.toggleSwitch, background: istAktiv ? tokens.colors.gradient : tokens.colors.border }}>
                   <div style={{ ...styles.toggleKnopf, transform: istAktiv ? 'translateX(20px)' : 'translateX(2px)' }} />
                 </div>
               </div>
@@ -179,7 +197,7 @@ export default function EntdeckenTab({ einstellungen, setEinstellungen }) {
           {eigeneListen.map(liste => {
             const istAktiv = aktiveListen.includes(liste.listenId)
             return (
-              <div key={liste.id} style={{ ...styles.listenKarte, borderColor: istAktiv ? '#a78bfa' : '#e2e8f0', background: istAktiv ? '#faf5ff' : 'white' }}>
+              <div key={liste.id} style={{ ...styles.listenKarte, borderColor: istAktiv ? tokens.colors.primaryViolet : tokens.colors.border, background: istAktiv ? tokens.colors.primaryBg : tokens.colors.surface }}>
                 <div style={styles.listenKarteLinks}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                     <span style={styles.eigeneBadge}>Eigene</span>
@@ -188,7 +206,7 @@ export default function EntdeckenTab({ einstellungen, setEinstellungen }) {
                   <p style={styles.listenBeschreibung}>{liste.titel}</p>
                   <p style={styles.listenAnzahl}>{liste.vokabelAnzahl ?? 0} Vokabeln</p>
                 </div>
-                <div onClick={() => toggleEigeneListe(liste.listenId)} style={{ ...styles.toggleSwitch, background: istAktiv ? 'linear-gradient(135deg, #7c3aed, #4f46e5)' : '#e2e8f0' }}>
+                <div onClick={() => toggleEigeneListe(liste.listenId)} style={{ ...styles.toggleSwitch, background: istAktiv ? tokens.colors.gradient : tokens.colors.border }}>
                   <div style={{ ...styles.toggleKnopf, transform: istAktiv ? 'translateX(20px)' : 'translateX(2px)' }} />
                 </div>
               </div>
@@ -209,7 +227,6 @@ export default function EntdeckenTab({ einstellungen, setEinstellungen }) {
           onToggle={() => handleToggle(ausgewaehlteListe.id)}
         />
       )}
-
     </div>
   )
 }
@@ -217,35 +234,35 @@ export default function EntdeckenTab({ einstellungen, setEinstellungen }) {
 const styles = {
   container: { padding: '1.25rem' },
   pageHeader: { marginBottom: 20 },
-  pageTitel: { fontSize: '1.3rem', fontWeight: 800, color: '#1e293b', margin: '0 0 4px', letterSpacing: '-0.02em' },
-  pageUntertitel: { fontSize: '0.85rem', color: '#94a3b8', margin: 0 },
+  pageTitel: { fontSize: '1.3rem', fontWeight: 800, color: tokens.colors.textDark, margin: '0 0 4px', letterSpacing: tokens.font.tracking.tight },
+  pageUntertitel: { fontSize: '0.85rem', color: tokens.colors.textMuted, margin: 0 },
   sprachGruppe: { marginBottom: 24 },
   sprachHeader: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 },
   sprachFlagge: { fontSize: '1.3rem' },
   sprachName: { fontSize: '0.95rem', fontWeight: 700, color: '#334155', flex: 1 },
-  aktivZaehler: { fontSize: '0.75rem', color: '#7c3aed', fontWeight: 700, background: '#f5f3ff', padding: '2px 8px', borderRadius: 8 },
-  listenKarte: { display: 'flex', alignItems: 'center', background: 'white', borderRadius: 16, padding: '1rem 1.1rem', marginBottom: 8, border: '2px solid', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', cursor: 'pointer', gap: 12 },
+  aktivZaehler: { fontSize: '0.75rem', color: tokens.colors.primary, fontWeight: 700, background: '#f5f3ff', padding: '2px 8px', borderRadius: tokens.radius.sm },
+  listenKarte: { display: 'flex', alignItems: 'center', background: tokens.colors.surface, borderRadius: tokens.radius.card, padding: '1rem 1.1rem', marginBottom: 8, border: '2px solid', boxShadow: tokens.shadow.sm, cursor: 'pointer', gap: 12 },
   listenKarteLinks: { flex: 1, minWidth: 0 },
-  aktivBadge: { fontSize: '0.7rem', fontWeight: 700, color: '#7c3aed', background: '#ede9fe', padding: '1px 8px', borderRadius: 6 },
-  eigeneBadge: { fontSize: '0.7rem', fontWeight: 700, color: '#0369a1', background: '#e0f2fe', padding: '1px 8px', borderRadius: 6, border: '1px solid #bae6fd' },
-  listenBeschreibung: { fontSize: '0.9rem', fontWeight: 600, color: '#1e293b', margin: '0 0 2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
-  listenAnzahl: { fontSize: '0.75rem', color: '#94a3b8', margin: 0, fontWeight: 500 },
-  toggleSwitch: { width: 44, height: 24, borderRadius: 12, position: 'relative', cursor: 'pointer', flexShrink: 0, transition: 'background 0.2s ease' },
+  aktivBadge: { fontSize: '0.7rem', fontWeight: 700, color: tokens.colors.primary, background: tokens.colors.primaryLight, padding: '1px 8px', borderRadius: tokens.radius.xs },
+  eigeneBadge: { fontSize: '0.7rem', fontWeight: 700, color: '#0369a1', background: '#e0f2fe', padding: '1px 8px', borderRadius: tokens.radius.xs, border: '1px solid #bae6fd' },
+  listenBeschreibung: { fontSize: '0.9rem', fontWeight: 600, color: tokens.colors.textDark, margin: '0 0 2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+  listenAnzahl: { fontSize: '0.75rem', color: tokens.colors.textMuted, margin: 0, fontWeight: 500 },
+  toggleSwitch: { width: 44, height: 24, borderRadius: 12, position: 'relative', cursor: 'pointer', flexShrink: 0, transition: tokens.transition.slow },
   toggleKnopf: { position: 'absolute', top: 2, width: 20, height: 20, borderRadius: '50%', background: 'white', boxShadow: '0 1px 4px rgba(0,0,0,0.2)', transition: 'transform 0.2s ease' },
-  infoBox: { background: '#f8fafc', borderRadius: 12, padding: '0.85rem 1rem', marginTop: 8, border: '1px solid #e2e8f0' },
-  infoText: { fontSize: '0.82rem', color: '#94a3b8', margin: 0, textAlign: 'center' },
-  modalOverlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-end', zIndex: 1000, backdropFilter: 'blur(4px)' },
-  modal: { width: '100%', background: 'white', borderRadius: '24px 24px 0 0', padding: '1.5rem 1.5rem 2rem', boxShadow: '0 -8px 40px rgba(0,0,0,0.15)', maxHeight: '80vh', overflowY: 'auto' },
+  infoBox: { background: tokens.colors.surfaceAlt, borderRadius: tokens.radius.lg, padding: '0.85rem 1rem', marginTop: 8, border: `1px solid ${tokens.colors.border}` },
+  infoText: { fontSize: '0.82rem', color: tokens.colors.textMuted, margin: 0, textAlign: 'center' },
+  modalOverlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-end', zIndex: tokens.z.modal, backdropFilter: 'blur(4px)' },
+  modal: { width: '100%', background: tokens.colors.surface, borderRadius: '24px 24px 0 0', padding: '1.5rem 1.5rem 2rem', boxShadow: tokens.shadow.lg, maxHeight: '80vh', overflowY: 'auto' },
   modalHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
   modalFlagge: { fontSize: '1.4rem' },
-  modalTitel: { fontSize: '1.1rem', fontWeight: 800, color: '#1e293b', margin: '0 0 2px', letterSpacing: '-0.01em' },
-  modalAnzahl: { fontSize: '0.8rem', color: '#94a3b8', margin: 0, fontWeight: 500 },
-  schliessenBtn: { background: '#f1f5f9', border: 'none', borderRadius: '50%', width: 32, height: 32, cursor: 'pointer', fontSize: '0.85rem', color: '#64748b', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  vorschauListe: { background: '#f8fafc', borderRadius: 14, padding: '0.5rem', marginBottom: 16, maxHeight: '40vh', overflowY: 'auto' },
-  vorschauItem: { display: 'flex', alignItems: 'center', gap: 8, padding: '0.55rem 0.75rem', borderRadius: 10 },
-  vorschauWort: { fontWeight: 700, color: '#1e293b', fontSize: '0.9rem', minWidth: 80, flex: 1 },
+  modalTitel: { fontSize: '1.1rem', fontWeight: 800, color: tokens.colors.textDark, margin: '0 0 2px', letterSpacing: '-0.01em' },
+  modalAnzahl: { fontSize: '0.8rem', color: tokens.colors.textMuted, margin: 0, fontWeight: 500 },
+  schliessenBtn: { background: tokens.colors.borderLight, border: 'none', borderRadius: '50%', width: 32, height: 32, cursor: 'pointer', fontSize: '0.85rem', color: tokens.colors.textLight, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  vorschauListe: { background: tokens.colors.surfaceAlt, borderRadius: tokens.radius.xl, padding: '0.5rem', marginBottom: 16, maxHeight: '40vh', overflowY: 'auto' },
+  vorschauItem: { display: 'flex', alignItems: 'center', gap: 8, padding: '0.55rem 0.75rem', borderRadius: tokens.radius.md },
+  vorschauWort: { fontWeight: 700, color: tokens.colors.textDark, fontSize: '0.9rem', minWidth: 80, flex: 1 },
   vorschauPfeil: { color: '#cbd5e1', fontSize: '0.8rem', flexShrink: 0 },
-  vorschauUebersetzung: { color: '#475569', fontSize: '0.9rem', flex: 1 },
-  vorschauMehr: { textAlign: 'center', color: '#94a3b8', fontSize: '0.8rem', padding: '0.5rem', margin: 0 },
-  toggleBtn: { width: '100%', padding: '0.95rem', color: 'white', border: 'none', borderRadius: 14, fontSize: '1rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '-0.01em' },
+  vorschauUebersetzung: { color: tokens.colors.textMid, fontSize: '0.9rem', flex: 1 },
+  vorschauMehr: { textAlign: 'center', color: tokens.colors.textMuted, fontSize: '0.8rem', padding: '0.5rem', margin: 0 },
+  toggleBtn: { width: '100%', padding: '0.95rem', color: 'white', border: 'none', borderRadius: tokens.radius.xl, fontSize: '1rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '-0.01em' },
 }
