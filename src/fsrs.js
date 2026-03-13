@@ -1,18 +1,12 @@
 // ============================================================
-// VokaOrbit — FSRS Algorithmus + Smart Direction
-// ============================================================
-//
-// Jede Vokabel hat bis zu 3 Profile in Firestore:
-//   en_de        → eigenes FSRS-Profil
-//   de_en        → eigenes FSRS-Profil
-//   abwechselnd  → eigenes FSRS-Profil (Richtung per Zufall)
-//
-// Profile werden NIE gelöscht — nur pausiert oder aktiv.
+// VokaOrbit — src/core/fsrs.js
+// Reiner FSRS-Algorithmus. Kein React, kein Firebase.
+// Nur pure Functions — vollständig testbar ohne Side Effects.
 // ============================================================
 
 
 // ------------------------------------------------------------
-// 1. FSRS Kern — richtungsunabhängig
+// 1. FSRS Kern — Bewertung berechnen
 // ------------------------------------------------------------
 
 /**
@@ -61,7 +55,7 @@ export function berechneNaechsteWiederholung(profil, bewertung) {
 
 
 // ------------------------------------------------------------
-// 2. Startprofil anlegen beim Richtungswechsel
+// 2. Startprofil anlegen
 // ------------------------------------------------------------
 
 /**
@@ -74,7 +68,6 @@ export function erstelleStartProfil(quellProfil = null, faktor = 0.5) {
   const jetzt = Date.now()
 
   if (!quellProfil) {
-    // Komplett neue Vokabel — FSRS Standard
     return {
       intervall: 0,
       wiederholungen: 0,
@@ -85,14 +78,14 @@ export function erstelleStartProfil(quellProfil = null, faktor = 0.5) {
   }
 
   const neueStabilitaet = Math.max(0.5, quellProfil.stabilitaet * faktor)
-  const neuesIntervall = Math.max(1, Math.round(quellProfil.intervall * faktor))
+  const neuesIntervall  = Math.max(1, Math.round(quellProfil.intervall * faktor))
 
   return {
-    intervall: neuesIntervall,
-    wiederholungen: Math.max(0, quellProfil.wiederholungen - 1),
-    stabilitaet: neueStabilitaet,
+    intervall:           neuesIntervall,
+    wiederholungen:      Math.max(0, quellProfil.wiederholungen - 1),
+    stabilitaet:         neueStabilitaet,
     naechsteFaelligkeit: jetzt + neuesIntervall * 24 * 60 * 60 * 1000,
-    letzteWiederholung: null
+    letzteWiederholung:  null
   }
 }
 
@@ -103,12 +96,10 @@ export function erstelleStartProfil(quellProfil = null, faktor = 0.5) {
 
 /**
  * Verwaltet den Übergang zwischen Lernrichtungen.
- * Gibt zurück welche Profile aktiv sind und was neu angelegt werden soll.
- *
- * @param {string} vorher - "en_de" | "de_en" | "beide" | "abwechselnd"
+ * @param {string} vorher  - "en_de" | "de_en" | "beide" | "abwechselnd"
  * @param {string} nachher - "en_de" | "de_en" | "beide" | "abwechselnd"
- * @param {object} vorhandeneProfile - { en_de: Profil|null, de_en: Profil|null, abwechselnd: Profil|null }
- * @returns {object} - { aktiv: string[], neuAnlegen: { richtung, profil }[] }
+ * @param {object} vorhandeneProfile - { en_de, de_en, abwechselnd }
+ * @returns {{ aktiv: string[], neuAnlegen: { richtung, profil }[] }}
  */
 export function handleRichtungswechsel(vorher, nachher, vorhandeneProfile) {
   const { en_de, de_en, abwechselnd } = vorhandeneProfile
@@ -118,10 +109,7 @@ export function handleRichtungswechsel(vorher, nachher, vorhandeneProfile) {
   if (nachher === 'en_de') {
     aktiv.push('en_de')
     if (!en_de) {
-      // Quelle bestimmen
-      const quelle = vorher === 'de_en' ? de_en
-                   : vorher === 'abwechselnd' ? abwechselnd
-                   : null
+      const quelle = vorher === 'de_en' ? de_en : vorher === 'abwechselnd' ? abwechselnd : null
       const faktor = vorher === 'abwechselnd' ? 0.7 : 0.5
       neuAnlegen.push({ richtung: 'en_de', profil: erstelleStartProfil(quelle, faktor) })
     }
@@ -130,9 +118,7 @@ export function handleRichtungswechsel(vorher, nachher, vorhandeneProfile) {
   else if (nachher === 'de_en') {
     aktiv.push('de_en')
     if (!de_en) {
-      const quelle = vorher === 'en_de' ? en_de
-                   : vorher === 'abwechselnd' ? abwechselnd
-                   : null
+      const quelle = vorher === 'en_de' ? en_de : vorher === 'abwechselnd' ? abwechselnd : null
       const faktor = vorher === 'abwechselnd' ? 0.7 : 0.5
       neuAnlegen.push({ richtung: 'de_en', profil: erstelleStartProfil(quelle, faktor) })
     }
@@ -140,7 +126,6 @@ export function handleRichtungswechsel(vorher, nachher, vorhandeneProfile) {
 
   else if (nachher === 'beide') {
     aktiv.push('en_de', 'de_en')
-
     if (!en_de) {
       const quelle = de_en ?? abwechselnd ?? null
       const faktor = abwechselnd ? 0.7 : 0.5
@@ -155,21 +140,16 @@ export function handleRichtungswechsel(vorher, nachher, vorhandeneProfile) {
 
   else if (nachher === 'abwechselnd') {
     aktiv.push('abwechselnd')
-
     if (!abwechselnd) {
-      // Bestes vorhandenes Profil als Quelle
       let quelle = null
       let faktor = 0.5
-
       if (en_de && de_en) {
-        // Beide vorhanden → MAX Stabilität × 0.7
         quelle = en_de.stabilitaet >= de_en.stabilitaet ? en_de : de_en
         faktor = 0.7
       } else if (en_de || de_en) {
         quelle = en_de ?? de_en
         faktor = 0.5
       }
-
       neuAnlegen.push({ richtung: 'abwechselnd', profil: erstelleStartProfil(quelle, faktor) })
     }
   }
@@ -184,7 +164,7 @@ export function handleRichtungswechsel(vorher, nachher, vorhandeneProfile) {
 
 /**
  * Wählt die Lernrichtung für eine Karte.
- * @param {object} profile - { en_de: Profil|null, de_en: Profil|null }
+ * @param {{ en_de, de_en }} profile
  * @param {string} einstellung - "smart" | "abwechselnd" | "en_de" | "de_en"
  * @returns {string} - "en_de" oder "de_en"
  */
@@ -199,11 +179,10 @@ export function waehleRichtung(profile, einstellung) {
   }
 
   // "smart" — schwächere Richtung bekommt mehr Karten
-  if (!en_de && !de_en) return 'en_de' // beide neu → zuerst en_de
-  if (!en_de) return 'en_de'           // en_de noch nie gelernt
-  if (!de_en) return 'de_en'           // de_en noch nie gelernt
+  if (!en_de && !de_en) return 'en_de'
+  if (!en_de) return 'en_de'
+  if (!de_en) return 'de_en'
 
-  // Gewichteter Zufall nach Schwäche (niedrige Stabilität = schwächer)
   const schwaeche_en_de = 1 / Math.max(0.1, en_de.stabilitaet)
   const schwaeche_de_en = 1 / Math.max(0.1, de_en.stabilitaet)
   const gesamt = schwaeche_en_de + schwaeche_de_en
@@ -213,7 +192,7 @@ export function waehleRichtung(profile, einstellung) {
 
 
 // ------------------------------------------------------------
-// 5. Fällige Karten bestimmen (mit Session-Abstand-Regel)
+// 5. Fällige Karten bestimmen
 // ------------------------------------------------------------
 
 /**
@@ -221,21 +200,18 @@ export function waehleRichtung(profile, einstellung) {
  * Session-Abstand-Regel: beide Richtungen einer Vokabel können
  * nicht in derselben Session erscheinen — schwächere hat Vorrang.
  *
- * @param {Array} karten - [{ id, vokabelId, richtung, ...profilDaten }]
- * @param {string} lernrichtung - "smart" | "beide" | "en_de" | "de_en" | "abwechselnd"
- * @returns {Array} - fällige Karten [{ id, vokabelId, richtung, ... }]
+ * @param {Array} karten
+ * @param {string} lernrichtung
+ * @returns {Array} - fällige Karten
  */
 export function sindFaellig(karten, lernrichtung = 'smart') {
   const jetzt = Date.now()
 
-  // Alle fälligen Karten filtern
   const faellig = karten.filter(k =>
     !k.naechsteFaelligkeit || k.naechsteFaelligkeit <= jetzt
   )
 
-  // Bei "beide" und "smart": Session-Abstand-Regel anwenden
   if (lernrichtung === 'beide' || lernrichtung === 'smart') {
-    // Gruppiere nach vokabelId
     const nachVokabel = {}
     for (const karte of faellig) {
       if (!nachVokabel[karte.vokabelId]) nachVokabel[karte.vokabelId] = []
@@ -243,250 +219,30 @@ export function sindFaellig(karten, lernrichtung = 'smart') {
     }
 
     const ergebnis = []
-    for (const [vokabelId, richtungen] of Object.entries(nachVokabel)) {
+    for (const richtungen of Object.values(nachVokabel)) {
       if (richtungen.length <= 1) {
-        // Nur eine Richtung fällig → kein Konflikt
         ergebnis.push(...richtungen)
       } else {
-        // Beide Richtungen fällig → schwächere (niedrigere Stabilität) bevorzugen
         const schwaecher = richtungen.reduce((a, b) =>
           (a.stabilitaet ?? 1) <= (b.stabilitaet ?? 1) ? a : b
         )
         ergebnis.push(schwaecher)
-        // Die stärkere Richtung wird NICHT in diese Session aufgenommen
       }
     }
     return ergebnis
   }
 
-  // Einfache Richtung → alle fälligen zurückgeben
   return faellig
 }
 
 
 // ------------------------------------------------------------
-// 6. Session zusammenstellen (Wiederholungen + Neue Karten)
+// 6. Hilfsfunktion: Profilstatus
 // ------------------------------------------------------------
 
-/**
- * Stellt eine komplette Lern-Session zusammen.
- *
- * Neue Karten = Karten ohne aktives Profil für die gewählte Richtung.
- * Wiederholungen = Karten mit Profil die heute fällig sind.
- *
- * Modi:
- *   'getrennt'  — erst alle Wiederholungen, dann Neue
- *   'gemischt'  — abwechselnd Wiederholung / Neu (wie Duolingo)
- *
- * @param {Array}  alleKarten        - aus ladeAlleKarten() (mit Profilen)
- * @param {object} einstellungen     - { lernrichtung, neueKartenProTag, neueKartenModus }
- * @param {object} heuteGesehen      - { [vokabelId]: true } bereits heute eingeführte neue Karten
- * @returns {{ session, wiederholungAnzahl, neuAnzahl }}
- */
-export function ladeSessionKarten(alleKarten, einstellungen, heuteGesehen = {}) {
-  const {
-    lernrichtung    = 'smart',
-    neueKartenProTag = 10,
-    neueKartenModus  = 'getrennt',
-  } = einstellungen
-
-  // 1. Lernkarten aus alleKarten ableiten (mit Richtung + aktivProfil)
-  const lernkarten = []
-  for (const karte of alleKarten) {
-    if (lernrichtung === 'abwechselnd') {
-      const profil = karte.profil_abwechselnd ?? null
-      lernkarten.push({ ...karte, richtung: 'abwechselnd', aktivProfil: profil })
-    } else if (lernrichtung === 'en_de') {
-      lernkarten.push({ ...karte, richtung: 'en_de', aktivProfil: karte.profil_en_de ?? null })
-    } else if (lernrichtung === 'de_en') {
-      lernkarten.push({ ...karte, richtung: 'de_en', aktivProfil: karte.profil_de_en ?? null })
-    } else {
-      // smart / beide → waehleRichtung pro Karte
-      const richtung = waehleRichtung(
-        { en_de: karte.profil_en_de, de_en: karte.profil_de_en },
-        lernrichtung
-      )
-      const profil = richtung === 'en_de' ? karte.profil_en_de : karte.profil_de_en
-      lernkarten.push({ ...karte, richtung, aktivProfil: profil ?? null })
-    }
-  }
-
-  // 2. Trennen: Wiederholungen vs. Neue
-  const jetzt = Date.now()
-
-  const wiederholungen = []
-  const neuKandidaten  = []
-
-  for (const karte of lernkarten) {
-    if (!karte.aktivProfil) {
-      // Noch nie gesehen → Neue Karte
-      neuKandidaten.push(karte)
-    } else if (karte.aktivProfil.naechsteFaelligkeit <= jetzt) {
-      // Profil vorhanden + fällig → Wiederholung
-      wiederholungen.push(karte)
-    }
-    // Profil vorhanden aber noch nicht fällig → gar nicht in Session
-  }
-
-  // 3. Session-Abstand-Regel für Wiederholungen (smart/beide)
-  const wiederholungenGefiltert =
-    (lernrichtung === 'beide' || lernrichtung === 'smart')
-      ? _sessionAbstandRegel(wiederholungen)
-      : wiederholungen
-
-  // 4. Neue Karten: max. neueKartenProTag, heute noch nicht gesehen
-  // Round-Robin über alle Listen → faire Verteilung bei mehreren aktiven Listen
-  const bereitsHeuteNeu = Object.keys(heuteGesehen).length
-  const nochErlaubt     = Math.max(0, neueKartenProTag - bereitsHeuteNeu)
-  const neuGefiltert    = neuKandidaten.filter(k => !heuteGesehen[k.id])
-  const neueKarten      = _roundRobin(neuGefiltert, nochErlaubt)
-
-  // 5. Session zusammenstellen
-  let session
-  if (neueKartenModus === 'gemischt') {
-    session = _mischen(wiederholungenGefiltert, neueKarten)
-  } else {
-    // getrennt: erst Wiederholungen, dann Neue
-    session = [...wiederholungenGefiltert, ...neueKarten]
-  }
-
-  return {
-    session,
-    wiederholungAnzahl: wiederholungenGefiltert.length,
-    neuAnzahl:          neueKarten.length,
-  }
-}
-
-/**
- * Verteilt neue Karten gewichtet nach Listengröße.
- *
- * Prinzip:
- *   - Jede Liste bekommt Slots proportional zu ihrer Anzahl verbleibender Karten
- *   - Minimum 1 Slot pro Liste (solange Limit es erlaubt)
- *
- * Beispiel bei Limit=10, Listen mit 300/30/4 verbleibenden Karten:
- *   → Slots: 8 / 1 / 1  (proportional, aber C bekommt mindestens 1)
- *
- * Beispiel bei Limit=3, Listen mit 300/30/4:
- *   → Slots: 1 / 1 / 1  (Minimum greift)
- */
-function _roundRobin(karten, limit) {
-  if (limit <= 0) return []
-
-  // Gruppiere nach listenId
-  const gruppen = {}
-  for (const k of karten) {
-    const lid = k.listenId ?? '__eigen__'
-    if (!gruppen[lid]) gruppen[lid] = []
-    gruppen[lid].push(k)
-  }
-
-  const eintraege = Object.values(gruppen)
-  if (eintraege.length === 0) return []
-  if (eintraege.length === 1) return eintraege[0].slice(0, limit)
-
-  const anzahlListen = eintraege.length
-
-  // Schritt 1: Minimum 1 pro Liste reservieren (falls Limit >= Anzahl Listen)
-  const minimum = Math.min(1, Math.floor(limit / anzahlListen))
-  const restLimit = limit - minimum * anzahlListen
-
-  // Schritt 2: Restliche Slots proportional nach Listengröße verteilen
-  const gesamtKarten = eintraege.reduce((s, q) => s + q.length, 0)
-  const slots = eintraege.map(q => {
-    const anteil = gesamtKarten > 0 ? q.length / gesamtKarten : 1 / anzahlListen
-    return minimum + Math.round(anteil * restLimit)
-  })
-
-  // Schritt 3: Rundungsfehler korrigieren (Slots-Summe auf limit bringen)
-  let diff = limit - slots.reduce((s, x) => s + x, 0)
-  // Größte Liste bekommt/verliert die Differenz
-  const groessteIdx = eintraege.reduce((bi, q, i) => q.length > eintraege[bi].length ? i : bi, 0)
-  slots[groessteIdx] = Math.max(minimum, slots[groessteIdx] + diff)
-
-  // Schritt 3b: Ungenutzte Slots umverteilen
-  // Falls eine Liste weniger Karten hat als ihr Slot zuweist,
-  // übrige Slots zur größten Liste addieren
-  for (let i = 0; i < eintraege.length; i++) {
-    const uebrig = slots[i] - eintraege[i].length
-    if (uebrig > 0) {
-      slots[i] = eintraege[i].length   // auf tatsächliche Größe kürzen
-      if (i !== groessteIdx) slots[groessteIdx] += uebrig  // Rest zur größten
-    }
-  }
-
-  // Schritt 4: Karten aus jeder Liste nehmen
-  const ergebnis = []
-  for (let i = 0; i < eintraege.length; i++) {
-    ergebnis.push(...eintraege[i].slice(0, slots[i]))
-  }
-
-  // Schritt 5: Mischen damit nicht alle Liste-A-Karten zuerst kommen
-  // (Interleave: A[0], B[0], C[0], A[1], B[1], ...)
-  const interleaved = []
-  const maxSlot = Math.max(...slots)
-  for (let i = 0; i < maxSlot; i++) {
-    for (let j = 0; j < eintraege.length; j++) {
-      if (i < slots[j] && eintraege[j][i]) interleaved.push(eintraege[j][i])
-    }
-  }
-
-  return interleaved.slice(0, limit)
-}
-
-/**
- * Session-Abstand-Regel intern (aus sindFaellig extrahiert).
- */
-function _sessionAbstandRegel(karten) {
-  const nachVokabel = {}
-  for (const k of karten) {
-    const vid = k.vokabelId ?? k.id
-    if (!nachVokabel[vid]) nachVokabel[vid] = []
-    nachVokabel[vid].push(k)
-  }
-  const ergebnis = []
-  for (const richtungen of Object.values(nachVokabel)) {
-    if (richtungen.length <= 1) {
-      ergebnis.push(...richtungen)
-    } else {
-      const schwaecher = richtungen.reduce((a, b) =>
-        (a.aktivProfil?.stabilitaet ?? 1) <= (b.aktivProfil?.stabilitaet ?? 1) ? a : b
-      )
-      ergebnis.push(schwaecher)
-    }
-  }
-  return ergebnis
-}
-
-/**
- * Mischt zwei Arrays abwechselnd: [W, N, W, N, W, W, W...]
- * Wiederholungen und Neue wechseln sich ab, Rest wird angehängt.
- */
-function _mischen(a, b) {
-  const ergebnis = []
-  const max = Math.max(a.length, b.length)
-  for (let i = 0; i < max; i++) {
-    if (i < a.length) ergebnis.push(a[i])
-    if (i < b.length) ergebnis.push(b[i])
-  }
-  return ergebnis
-}
-
-
-// ------------------------------------------------------------
-// 7. Hilfsfunktion: Profilstatus für eine Vokabel
-// ------------------------------------------------------------
-
-/**
- * Gibt einen lesbaren Status für Debug/Statistik zurück.
- */
 export function profilStatus(en_de, de_en) {
   const fmt = (p) => p
     ? `Stab: ${p.stabilitaet?.toFixed(1)}, Int: ${p.intervall}d`
     : 'nicht vorhanden'
-
-  return {
-    en_de: fmt(en_de),
-    de_en: fmt(de_en)
-  }
+  return { en_de: fmt(en_de), de_en: fmt(de_en) }
 }
