@@ -414,3 +414,4 @@ function AppInhalt({ aktuellerTab, setAktuellerTab, deepLinkVokabel }) {
     </div>
   )
 }
+ 
