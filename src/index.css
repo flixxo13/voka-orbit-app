@@ -1,2 +1,143 @@
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: system-ui, sans-serif; background: #f5f5f5; }
+/* ============================================================
+   VokaOrbit — index.css
+   Globale Resets + Orbit-spezifische Basis-Styles.
+   Kein Framework. Nur was wirklich global gebraucht wird.
+   ============================================================ */
+
+/* ── Reset ──────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  height: 100%;
+  scroll-behavior: smooth;
+  /* Verhindert Layout-Shift durch Scrollbar */
+  scrollbar-gutter: stable;
+}
+
+body {
+  min-height: 100%;
+  font-family: 'Plus Jakarta Sans', 'DM Sans', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing:  antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Kein Bounce-Scroll auf iOS */
+  overscroll-behavior: none;
+  /* Kein Text-Selection Flackern auf Mobile */
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+/* ── Scrollbar — Orbit-Style ────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(124, 58, 237, 0.3);
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(124, 58, 237, 0.6);
+}
+
+/* Dark Mode Scrollbar */
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: rgba(167, 139, 250, 0.25);
+}
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(167, 139, 250, 0.5);
+}
+
+/* ── Focus-Ring — barrierefrei aber schön ───────────────────── */
+:focus-visible {
+  outline: 2px solid #7C3AED;
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* ── Range Input (Slider) ───────────────────────────────────── */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(124, 58, 237, 0.2);
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #7C3AED;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.4);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #7C3AED;
+  border: none;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.4);
+  cursor: pointer;
+}
+
+/* ── Spinner-Keyframe (für Legacy-Spinner) ──────────────────── */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ── Float-Keyframe für CSS-only Float ─────────────────────── */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-6px); }
+}
+
+/* ── Pulse-Glow für Streak-Badge ────────────────────────────── */
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(249, 115, 22, 0);
+  }
+}
+
+/* ── Smooth Theme Transition ────────────────────────────────── */
+/* Nur Farben transitionieren, keine Layout-Properties */
+body,
+body * {
+  transition:
+    background-color 0.25s ease,
+    border-color     0.25s ease,
+    box-shadow       0.25s ease;
+}
+
+/* Ausnahmen: Text soll sofort wechseln (kein flimmerndes Grau) */
+body *,
+h1, h2, h3, p, span, button, input, label {
+  transition:
+    background-color 0.25s ease,
+    border-color     0.25s ease,
+    box-shadow       0.25s ease,
+    color            0.12s ease;
+}
+
+/* ── Utility: Safe Area (iPhone Notch/Home Bar) ─────────────── */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
