@@ -38,5 +38,13 @@
     "niveau": "C1",
     "beschreibung": "Experte — Komplexe Konzepte & Nuancen",
     "anzahl": 238
+  },
+  {
+    "id": "context_shapers",
+    "sprache": "Englisch",
+    "flagge": "🇬🇧",
+    "niveau": "B2",
+    "beschreibung": "Konnektoren & akademische Schlüsselwörter",
+    "anzahl": 49
   }
 ]
