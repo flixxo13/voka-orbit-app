@@ -1,205 +1,51 @@
 [
-  {
-    "wort": "however",
-    "uebersetzung": "jedoch / allerdings"
-  },
-  {
-    "wort": "although",
-    "uebersetzung": "obwohl"
-  },
-  {
-    "wort": "nevertheless",
-    "uebersetzung": "nichtsdestotrotz / dennoch"
-  },
-  {
-    "wort": "therefore",
-    "uebersetzung": "daher / deshalb"
-  },
-  {
-    "wort": "unless",
-    "uebersetzung": "außer wenn / es sei denn"
-  },
-  {
-    "wort": "instead",
-    "uebersetzung": "stattdessen"
-  },
-  {
-    "wort": "otherwise",
-    "uebersetzung": "ansonsten / andernfalls"
-  },
-  {
-    "wort": "actually",
-    "uebersetzung": "eigentlich / tatsächlich"
-  },
-  {
-    "wort": "perhaps",
-    "uebersetzung": "vielleicht / eventuell"
-  },
-  {
-    "wort": "probably",
-    "uebersetzung": "wahrscheinlich"
-  },
-  {
-    "wort": "since",
-    "uebersetzung": "da / seitdem (kausal)"
-  },
-  {
-    "wort": "whether",
-    "uebersetzung": "ob"
-  },
-  {
-    "wort": "despite",
-    "uebersetzung": "trotz / ungeachtet dessen"
-  },
-  {
-    "wort": "rather",
-    "uebersetzung": "eher / lieber"
-  },
-  {
-    "wort": "significant",
-    "uebersetzung": "bedeutend / wesentlich"
-  },
-  {
-    "wort": "frequent",
-    "uebersetzung": "häufig"
-  },
-  {
-    "wort": "various",
-    "uebersetzung": "verschiedene / vielfältige"
-  },
-  {
-    "wort": "almost",
-    "uebersetzung": "fast / beinahe"
-  },
-  {
-    "wort": "already",
-    "uebersetzung": "bereits / schon"
-  },
-  {
-    "wort": "certainly",
-    "uebersetzung": "sicherlich / gewiss"
-  }
-
-  
-  {
-    "wort": "essential",
-    "uebersetzung": "wesentlich / unverzichtbar"
-  },
-  {
-    "wort": "maintain",
-    "uebersetzung": "aufrechterhalten / pflegen"
-  },
-  {
-    "wort": "determine",
-    "uebersetzung": "bestimmen / festlegen"
-  },
-  {
-    "wort": "contribute",
-    "uebersetzung": "beitragen"
-  },
-  {
-    "wort": "appropriate",
-    "uebersetzung": "angemessen / passend"
-  },
-  {
-    "wort": "avoid",
-    "uebersetzung": "vermeiden"
-  },
-  {
-    "wort": "consider",
-    "uebersetzung": "berücksichtigen / in Betracht ziehen"
-  },
-  {
-    "wort": "increase",
-    "uebersetzung": "erhöhen / zunehmen"
-  },
-  {
-    "wort": "reduce",
-    "uebersetzung": "verringern / reduzieren"
-  },
-  {
-    "wort": "common",
-    "uebersetzung": "häufig / üblich / gemeinsam"
-  },
-  {
-    "wort": "obvious",
-    "uebersetzung": "offensichtlich"
-  },
-  {
-    "wort": "rarely",
-    "uebersetzung": "selten"
-  },
-  {
-    "wort": "eventually",
-    "uebersetzung": "schließlich / irgendwann"
-  },
-  {
-    "wort": "currently",
-    "uebersetzung": "derzeit / aktuell"
-  },
-  {
-    "wort": "specifically",
-    "uebersetzung": "speziell / gezielt"
-  },
-  {
-    "wort": "support",
-    "uebersetzung": "unterstützen"
-  },
-  {
-    "wort": "require",
-    "uebersetzung": "erfordern / benötigen"
-  },
-  {
-    "wort": "involve",
-    "uebersetzung": "beinhalten / einbeziehen"
-  },
-  {
-    "wort": "provide",
-    "uebersetzung": "bereitstellen / liefern"
-  },
-  {
-    "wort": "achieve",
-    "uebersetzung": "erreichen / erzielen"
-  },
-  {
-    "wort": "instead of",
-    "uebersetzung": "statt / anstelle von"
-  },
-  {
-    "wort": "as well as",
-    "uebersetzung": "sowie / sowohl als auch"
-  },
-  {
-    "wort": "due to",
-    "uebersetzung": "aufgrund von / wegen"
-  },
-  {
-    "wort": "in order to",
-    "uebersetzung": "um zu"
-  },
-  {
-    "wort": "furthermore",
-    "uebersetzung": "außerdem / ferner"
-  },
-  {
-    "wort": "actually",
-    "uebersetzung": "eigentlich / tatsächlich"
-  },
-  {
-    "wort": "approximately",
-    "uebersetzung": "ungefähr / etwa"
-  },
-  {
-    "wort": "sufficient",
-    "uebersetzung": "ausreichend / genügend"
-  },
-  {
-    "wort": "influence",
-    "uebersetzung": "beeinflussen / Einfluss"
-  },
-  {
-    "wort": "prevent",
-    "uebersetzung": "verhindern / vorbeugen"
-  }
+  { "wort": "however",       "uebersetzung": "jedoch / allerdings" },
+  { "wort": "although",      "uebersetzung": "obwohl" },
+  { "wort": "nevertheless",  "uebersetzung": "nichtsdestotrotz / dennoch" },
+  { "wort": "therefore",     "uebersetzung": "daher / deshalb" },
+  { "wort": "unless",        "uebersetzung": "außer wenn / es sei denn" },
+  { "wort": "instead",       "uebersetzung": "stattdessen" },
+  { "wort": "otherwise",     "uebersetzung": "ansonsten / andernfalls" },
+  { "wort": "actually",      "uebersetzung": "eigentlich / tatsächlich" },
+  { "wort": "perhaps",       "uebersetzung": "vielleicht / eventuell" },
+  { "wort": "probably",      "uebersetzung": "wahrscheinlich" },
+  { "wort": "since",         "uebersetzung": "da / seitdem (kausal)" },
+  { "wort": "whether",       "uebersetzung": "ob" },
+  { "wort": "despite",       "uebersetzung": "trotz / ungeachtet dessen" },
+  { "wort": "rather",        "uebersetzung": "eher / lieber" },
+  { "wort": "significant",   "uebersetzung": "bedeutend / wesentlich" },
+  { "wort": "frequent",      "uebersetzung": "häufig" },
+  { "wort": "various",       "uebersetzung": "verschiedene / vielfältige" },
+  { "wort": "almost",        "uebersetzung": "fast / beinahe" },
+  { "wort": "already",       "uebersetzung": "bereits / schon" },
+  { "wort": "certainly",     "uebersetzung": "sicherlich / gewiss" },
+  { "wort": "essential",     "uebersetzung": "wesentlich / unverzichtbar" },
+  { "wort": "maintain",      "uebersetzung": "aufrechterhalten / pflegen" },
+  { "wort": "determine",     "uebersetzung": "bestimmen / festlegen" },
+  { "wort": "contribute",    "uebersetzung": "beitragen" },
+  { "wort": "appropriate",   "uebersetzung": "angemessen / passend" },
+  { "wort": "avoid",         "uebersetzung": "vermeiden" },
+  { "wort": "consider",      "uebersetzung": "berücksichtigen / in Betracht ziehen" },
+  { "wort": "increase",      "uebersetzung": "erhöhen / zunehmen" },
+  { "wort": "reduce",        "uebersetzung": "verringern / reduzieren" },
+  { "wort": "common",        "uebersetzung": "häufig / üblich / gemeinsam" },
+  { "wort": "obvious",       "uebersetzung": "offensichtlich" },
+  { "wort": "rarely",        "uebersetzung": "selten" },
+  { "wort": "eventually",    "uebersetzung": "schließlich / irgendwann" },
+  { "wort": "currently",     "uebersetzung": "derzeit / aktuell" },
+  { "wort": "specifically",  "uebersetzung": "speziell / gezielt" },
+  { "wort": "support",       "uebersetzung": "unterstützen" },
+  { "wort": "require",       "uebersetzung": "erfordern / benötigen" },
+  { "wort": "involve",       "uebersetzung": "beinhalten / einbeziehen" },
+  { "wort": "provide",       "uebersetzung": "bereitstellen / liefern" },
+  { "wort": "achieve",       "uebersetzung": "erreichen / erzielen" },
+  { "wort": "instead of",    "uebersetzung": "statt / anstelle von" },
+  { "wort": "as well as",    "uebersetzung": "sowie / sowohl als auch" },
+  { "wort": "due to",        "uebersetzung": "aufgrund von / wegen" },
+  { "wort": "in order to",   "uebersetzung": "um zu" },
+  { "wort": "furthermore",   "uebersetzung": "außerdem / ferner" },
+  { "wort": "approximately", "uebersetzung": "ungefähr / etwa" },
+  { "wort": "sufficient",    "uebersetzung": "ausreichend / genügend" },
+  { "wort": "influence",     "uebersetzung": "beeinflussen / Einfluss" },
+  { "wort": "prevent",       "uebersetzung": "verhindern / vorbeugen" }
 ]
-
