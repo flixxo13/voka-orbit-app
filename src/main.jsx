@@ -1,3 +1,8 @@
+// ============================================================
+// VokaOrbit — main.jsx
+// Entry Point. ThemeProvider ist bereits in App.jsx gewrappt.
+// ============================================================
+
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
