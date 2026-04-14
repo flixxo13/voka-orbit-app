@@ -48,7 +48,7 @@ export default function App() {
     setScreen('launch');
   };
 
-  const isLearning = screen === 'learn' || screen === 'launch';
+  const isLearning = screen === 'learn' || screen === 'launch' || screen === 'manage';
 
   return (
     <div className="orbit-dark min-h-screen w-full overflow-x-hidden">
@@ -64,26 +64,55 @@ export default function App() {
 
       <div className="max-w-2xl mx-auto px-4 pt-4 pb-28 relative min-h-screen flex flex-col safe-top">
 
-        {/* ── HEADER ── */}
-        <header className="flex justify-between items-center mb-4 shrink-0 px-2">
-          <div className="flex items-center gap-3">
-            <motion.div
-              whileTap={{ scale: 0.9, rotate: -15 }}
-              onClick={goHome}
-              className="w-10 h-10 bg-gradient-to-br from-violet-600 to-purple-700 rounded-2xl flex items-center justify-center shadow-lg shadow-purple-700/40 cursor-pointer"
+        {/* ── HEADER (versteckt während Lernmodus) ── */}
+        <AnimatePresence>
+          {!isLearning && (
+            <motion.header
+              initial={{ opacity: 0, y: -16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -16 }}
+              transition={{ duration: 0.22 }}
+              className="flex justify-between items-center mb-4 shrink-0 px-2 pt-2"
             >
-              <Rocket className="text-white w-5 h-5" />
-            </motion.div>
-            <div>
-              <h1 className="text-xl font-black tracking-tighter text-white leading-none">
-                VokaOrbit
-              </h1>
-              <p className="text-[9px] font-bold text-white/30 uppercase tracking-[0.2em]">
-                Vocabulary in Space
-              </p>
-            </div>
-          </div>
-        </header>
+              <div className="flex items-center gap-3">
+                <motion.div
+                  whileTap={{ scale: 0.9, rotate: -15 }}
+                  onClick={goHome}
+                  className="cursor-pointer shrink-0"
+                >
+                  {/* VokaOrbit Icon */}
+                  <svg width="42" height="42" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                      <radialGradient id="hbg" cx="35%" cy="25%">
+                        <stop offset="0%" stopColor="#7C3AED"/>
+                        <stop offset="100%" stopColor="#4C1D95"/>
+                      </radialGradient>
+                      <radialGradient id="hpl" cx="30%" cy="25%">
+                        <stop offset="0%" stopColor="#DDD6FE"/>
+                        <stop offset="100%" stopColor="#8B5CF6"/>
+                      </radialGradient>
+                    </defs>
+                    <rect width="40" height="40" rx="11" fill="url(#hbg)"/>
+                    <ellipse cx="20" cy="21" rx="14" ry="6.5"
+                      stroke="rgba(196,181,253,0.65)" strokeWidth="1.5"
+                      transform="rotate(-20 20 21)" fill="none"/>
+                    <circle cx="20" cy="19" r="6" fill="url(#hpl)"/>
+                    <circle cx="31.5" cy="14" r="2.2" fill="#06B6D4" opacity="0.95"/>
+                    <circle cx="9.5" cy="27" r="1.6" fill="#F59E0B" opacity="0.85"/>
+                  </svg>
+                </motion.div>
+                <div>
+                  <h1 className="text-xl font-black tracking-tighter text-white leading-none">
+                    VokaOrbit
+                  </h1>
+                  <p className="text-[9px] font-bold text-white/30 uppercase tracking-[0.18em] mt-0.5">
+                    Lerne · Orbit · Meistere
+                  </p>
+                </div>
+              </div>
+            </motion.header>
+          )}
+        </AnimatePresence>
 
         {/* ── XP BAR (hidden while learning) ── */}
         <AnimatePresence>
