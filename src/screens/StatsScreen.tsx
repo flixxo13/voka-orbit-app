@@ -137,52 +137,44 @@ export function StatsScreen() {
             <table className="w-full text-left text-[10px] sm:text-xs">
               <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-400 uppercase tracking-widest font-black">
                 <tr>
-                  <th className="px-4 py-4 min-w-[120px]">Vokabel</th>
+                  <th className="px-4 py-4 min-w-[100px]">Vokabel</th>
+                  <th className="px-4 py-4 min-w-[100px]">Übersetzung</th>
                   <th className="px-4 py-4">Deck</th>
                   <th className="px-4 py-4">Intervall</th>
                   <th className="px-4 py-4">Ease</th>
-                  <th className="px-4 py-4">Zuletzt</th>
                   <th className="px-4 py-4">Fälligkeit</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {detailedStats?.map((card, i) => (
                   <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                    <td className="px-4 py-4 font-bold text-slate-700 dark:text-slate-200 break-words max-w-[200px]">{card.front}</td>
-                    <td className="px-4 py-4 text-slate-500">{card.deckName}</td>
-                    <td className="px-4 py-4 text-slate-500 whitespace-nowrap">{card.review?.interval.toFixed(1) || '-'} Tage</td>
-                    <td className="px-4 py-4 text-slate-500">{card.review?.ease.toFixed(2) || '-'}</td>
-                    <td className="px-4 py-4 text-slate-500 whitespace-nowrap">
-                      {card.review ? new Date(card.review.reviewedAt).toLocaleDateString() : '-'}
-                    </td>
+                    <td className="px-4 py-4 font-bold text-slate-200 break-words max-w-[120px]">{card.front}</td>
+                    <td className="px-4 py-4 text-violet-300 font-semibold break-words max-w-[120px]">{card.back}</td>
+                    <td className="px-4 py-4 text-slate-500 whitespace-nowrap">{card.deckName}</td>
+                    <td className="px-4 py-4 text-slate-500 whitespace-nowrap">{card.review?.interval.toFixed(1) ?? '-'} Tage</td>
+                    <td className="px-4 py-4 text-slate-500">{card.review?.ease.toFixed(2) ?? '-'}</td>
                     <td className="px-4 py-4 whitespace-nowrap">
                       {card.review ? (
                         <div className="flex flex-col gap-0.5">
                           {card.review.nextDueAt < todayMs ? (
-                            <>
-                              <span className="text-red-500 font-black flex items-center gap-1 text-[10px] uppercase tracking-tighter">
-                                Heute
-                                <span className="px-1 bg-red-500/10 rounded border border-red-500/20">Überfällig</span>
-                              </span>
-                              <span className="text-[9px] text-slate-400 italic">
-                                War fällig: {new Date(card.review.nextDueAt).toLocaleDateString()}
-                              </span>
-                            </>
+                            <span className="text-red-400 font-black text-[10px] uppercase tracking-tighter">
+                              Überfällig
+                            </span>
                           ) : (
-                            <span className={card.review.nextDueAt <= Date.now() ? 'text-emerald-500 font-bold' : 'text-slate-500'}>
-                              {new Date(card.review.nextDueAt).toLocaleDateString()}
+                            <span className={card.review.nextDueAt <= Date.now() ? 'text-emerald-400 font-bold' : 'text-slate-500'}>
+                              {new Date(card.review.nextDueAt).toLocaleDateString('de-DE', { day: '2-digit', month: 'short' })}
                             </span>
                           )}
                         </div>
                       ) : (
-                        <span className="text-orbit-purple font-bold italic">Neu</span>
+                        <span className="text-violet-400 font-bold italic text-[10px]">Neu</span>
                       )}
                     </td>
                   </tr>
                 ))}
                 {(!detailedStats || detailedStats.length === 0) && (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-slate-400 italic">Keine Vokabeln vorhanden.</td>
+                    <td colSpan={6} className="px-4 py-8 text-center text-slate-400 italic">Keine Vokabeln vorhanden.</td>
                   </tr>
                 )}
               </tbody>
@@ -191,7 +183,7 @@ export function StatsScreen() {
         </div>
       </div>
 
-      {/* Developer Debug Info */}
+      {/* === DEVELOPER DEBUG INFO (auskommentiert für Production) ===
       <div className="mt-12 p-6 bg-slate-100 dark:bg-slate-900 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-800">
         <h4 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Developer Debug Info</h4>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-[10px] font-mono text-slate-500">
@@ -204,7 +196,7 @@ export function StatsScreen() {
           <div>Due Now: {stats.dueNow}</div>
           <div>Avg Grade: {stats.avgGrade.toFixed(2)}</div>
           <div className="col-span-full pt-2 border-t border-slate-200 dark:border-slate-800">
-            <button 
+            <button
               onClick={() => { if(confirm('Alle Daten löschen?')) { db.delete().then(() => window.location.reload()); } }}
               className="text-red-500 hover:underline"
             >
@@ -213,6 +205,7 @@ export function StatsScreen() {
           </div>
         </div>
       </div>
+      === END DEBUG === */}
     </div>
   );
 }
