@@ -355,7 +355,7 @@ function TabBtn({ label, icon, active, onClick }: { label: string; icon: React.R
 /* ── Modals ── */
 function ModalOverlay({ children }: { children: React.ReactNode }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center p-4 bg-black/70 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[60] flex items-end justify-center px-4 pt-4 pb-28 bg-black/70 backdrop-blur-sm">
       <motion.div
         initial={{ y: 60, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
