@@ -1,8 +1,8 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { type Card } from '../core/storage-local';
 import { XP_COSTS, XP_REWARDS } from '../hooks/useSettings';
-import { Zap, Lightbulb, CheckCircle, Edit3 } from 'lucide-react';
+import { Zap } from 'lucide-react';
 
 /* ============================================================
    TYPES
@@ -12,179 +12,182 @@ interface OrbitHintSystemProps {
   xp: number;
   onSpendXP: (amount: number) => boolean;
   onGainXP: (amount: number) => void;
-  onRevealComplete: () => void; // called when word fully revealed
+  onRevealComplete: () => void;
   onEarlySolve: (correct: boolean, xpBonus: number) => void;
 }
 
+interface OrbData {
+  id: string;
+  letter: string;
+  colorIdx: number;
+  zone: 0 | 1 | 2 | 3;
+}
+
 /* ============================================================
-   PLANET COLORS for orbs
+   COLORS – vibrant space palette
    ============================================================ */
 const ORB_COLORS = [
-  { bg: '#7C3AED', glow: 'rgba(124,58,237,0.7)', label: '#fff' },
-  { bg: '#06B6D4', glow: 'rgba(6,182,212,0.7)',  label: '#fff' },
-  { bg: '#EC4899', glow: 'rgba(236,72,153,0.7)', label: '#fff' },
-  { bg: '#FB923C', glow: 'rgba(251,146,60,0.7)', label: '#fff' },
-  { bg: '#2DD4BF', glow: 'rgba(45,212,191,0.7)', label: '#0A0A2E' },
-  { bg: '#A78BFA', glow: 'rgba(167,139,250,0.7)', label: '#fff' },
-  { bg: '#F59E0B', glow: 'rgba(245,158,11,0.7)', label: '#0A0A2E' },
-  { bg: '#60A5FA', glow: 'rgba(96,165,250,0.7)', label: '#fff' },
+  { from: '#7C3AED', to: '#6D28D9', glow: '0 0 20px 4px rgba(124,58,237,0.6)' },
+  { from: '#06B6D4', to: '#0891B2', glow: '0 0 20px 4px rgba(6,182,212,0.6)' },
+  { from: '#EC4899', to: '#DB2777', glow: '0 0 20px 4px rgba(236,72,153,0.6)' },
+  { from: '#F59E0B', to: '#D97706', glow: '0 0 20px 4px rgba(245,158,11,0.6)' },
+  { from: '#10B981', to: '#059669', glow: '0 0 20px 4px rgba(16,185,129,0.6)' },
+  { from: '#60A5FA', to: '#3B82F6', glow: '0 0 20px 4px rgba(96,165,250,0.6)' },
+] as const;
+
+/* ============================================================
+   4 FIXED FLOAT ZONES (% of container width/height)
+   Each orb gently oscillates within its zone.
+   ============================================================ */
+const ZONES: Array<{ x: string; y: string }> = [
+  { x: '12%',  y: '10%' },  // top-left
+  { x: '62%',  y: '5%'  },  // top-right
+  { x: '5%',   y: '55%' },  // bottom-left
+  { x: '68%',  y: '52%' },  // bottom-right
 ];
 
 /* ============================================================
-   LETTER TILE – individual character slot
+   HELPERS
    ============================================================ */
-interface LetterTileProps {
-  char: string;
-  isRevealed: boolean;
-  isSpace: boolean;
-  delay?: number;
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
 }
 
-function LetterTile({ char, isRevealed, isSpace, delay = 0 }: LetterTileProps) {
-  if (isSpace) return <div className="letter-tile-space" />;
+/**
+ * Build a pool of 4 unique letters:
+ * - Always includes the correct next letter
+ * - Up to 3 distractors from the target word (plausible, related)
+ * - Padded with common German letters if needed
+ */
+function buildPool(word: string, nextIdx: number): OrbData[] {
+  const clean = word.toUpperCase().replace(/ /g, '').split('');
+  if (nextIdx >= clean.length) return [];
+
+  const correct = clean[nextIdx];
+  const wordLetters = [...new Set(clean)].filter(l => l !== correct);
+  const fillers   = ['A','E','I','O','U','S','T','R','N'].filter(
+    l => l !== correct && !wordLetters.includes(l)
+  );
+
+  const extras  = shuffle([...wordLetters, ...fillers]).slice(0, 3);
+  const pool    = shuffle([correct, ...extras]);
+
+  return pool.map((letter, i) => ({
+    id:       `${letter}-${nextIdx}-${i}-${Math.random().toString(36).slice(2)}`,
+    letter,
+    colorIdx: i,
+    zone:     i as 0 | 1 | 2 | 3,
+  }));
+}
+
+/* ============================================================
+   ORB COMPONENT – gentle floating, tap feedback
+   ============================================================ */
+function FloatOrb({
+  orb,
+  isWrong,
+  onTap,
+}: {
+  orb: OrbData;
+  isWrong: boolean;
+  onTap: () => void;
+}) {
+  const color  = ORB_COLORS[orb.colorIdx % ORB_COLORS.length];
+  const zone   = ZONES[orb.zone];
+  // unique float timing per zone slot
+  const floatDur    = 2.4 + orb.zone * 0.55;
+  const floatDelay  = orb.zone * 0.3;
+  const floatAmp    = 10 + orb.zone * 2;
+  const sideAmp     = 6 + (orb.zone % 2) * 4;
 
   return (
-    <div className="relative">
-      <motion.div
-        className={`letter-tile ${isRevealed ? 'letter-tile-filled' : 'letter-tile-empty'}`}
-        initial={false}
-        animate={isRevealed ? {
-          scale: [1, 1.3, 1],
-          opacity: 1,
-        } : { scale: 1, opacity: 1 }}
-        transition={{ duration: 0.35, delay, ease: [0.34, 1.56, 0.64, 1] }}
-      >
-        <AnimatePresence>
-          {isRevealed && (
-            <motion.span
-              key="letter"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25, delay }}
-            >
-              {char}
-            </motion.span>
-          )}
-        </AnimatePresence>
-        {!isRevealed && (
-          <span className="text-white/20 text-xl font-black">_</span>
-        )}
-      </motion.div>
-    </div>
+    <motion.button
+      key={orb.id}
+      initial={{ scale: 0, opacity: 0 }}
+      animate={isWrong
+        ? {
+            scale: 1, opacity: 1,
+            x: [-8, 8, -8, 8, 0],
+            boxShadow: ['0 0 0px 0px rgba(239,68,68,0)', '0 0 18px 6px rgba(239,68,68,0.7)', '0 0 0px 0px rgba(239,68,68,0)'],
+          }
+        : {
+            scale: 1, opacity: 1,
+            y: [0, -floatAmp, 0],
+            x: [0, sideAmp, 0],
+          }
+      }
+      exit={{ scale: 0, opacity: 0, transition: { duration: 0.2 } }}
+      transition={isWrong
+        ? { duration: 0.45, x: { duration: 0.4 }, boxShadow: { duration: 0.5 } }
+        : {
+            scale:   { type: 'spring', stiffness: 280, damping: 16, delay: floatDelay * 0.5 },
+            opacity: { duration: 0.3, delay: floatDelay * 0.5 },
+            y:       { duration: floatDur, repeat: Infinity, ease: 'easeInOut', delay: floatDelay },
+            x:       { duration: floatDur * 1.3, repeat: Infinity, ease: 'easeInOut', delay: floatDelay * 0.6 },
+          }
+      }
+      style={{
+        position: 'absolute',
+        left: zone.x,
+        top:  zone.y,
+        width:  56,
+        height: 56,
+        borderRadius: '50%',
+        background: `linear-gradient(135deg, ${color.from}, ${color.to})`,
+        boxShadow: color.glow,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: 22,
+        fontWeight: 900,
+        color: '#fff',
+        border: '1.5px solid rgba(255,255,255,0.2)',
+        cursor: 'pointer',
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
+        zIndex: 10,
+      }}
+      whileTap={{ scale: 0.85 }}
+      onClick={onTap}
+    >
+      {orb.letter}
+    </motion.button>
   );
 }
 
 /* ============================================================
-   ORBIT ORB – single orbiting letter planet
-   (Uses RAF + direct DOM writes for zero re-render overhead)
+   LETTER BLANK – individual slot in the answer row
    ============================================================ */
-interface OrbProps {
-  letter: string;
-  colorIndex: number;
-  orbitRX: number;
-  orbitRY: number;
-  speed: number;       // radians/second
-  startAngle: number;  // initial angle in radians
-  size: number;        // px
-  isInserting: boolean;
-  targetX: number;     // px, relative to orbit center
-  targetY: number;
-  onInserted: () => void;
-}
-
-function OrbitOrb({
-  letter,
-  colorIndex,
-  orbitRX,
-  orbitRY,
-  speed,
-  startAngle,
-  size,
-  isInserting,
-  targetX,
-  targetY,
-  onInserted,
-}: OrbProps) {
-  const orbRef = useRef<HTMLDivElement>(null);
-  const animRef = useRef<number>(0);
-  const startTimeRef = useRef<number | null>(null);
-  const color = ORB_COLORS[colorIndex % ORB_COLORS.length];
-
-  // Orbit animation via RAF (no state = no re-renders)
-  useEffect(() => {
-    if (isInserting) return; // Let motion handle the insert animation
-
-    const animate = (timestamp: number) => {
-      if (!startTimeRef.current) startTimeRef.current = timestamp;
-      const elapsed = (timestamp - startTimeRef.current) / 1000;
-      const angle = startAngle + elapsed * speed;
-      const x = Math.cos(angle) * orbitRX;
-      const y = Math.sin(angle) * orbitRY;
-
-      if (orbRef.current) {
-        orbRef.current.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
-      }
-      animRef.current = requestAnimationFrame(animate);
-    };
-
-    animRef.current = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(animRef.current);
-  }, [isInserting, startAngle, speed, orbitRX, orbitRY]);
-
+function LetterBlank({
+  char,
+  isRevealed,
+  isNext,
+}: {
+  char: string;
+  isRevealed: boolean;
+  isNext: boolean;
+}) {
   return (
     <motion.div
-      ref={orbRef}
-      style={{
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        width: size,
-        height: size,
-        borderRadius: '50%',
-        background: color.bg,
-        boxShadow: `0 0 ${size * 0.8}px ${size * 0.25}px ${color.glow}`,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: size * 0.4,
-        fontWeight: 900,
-        color: color.label,
-        zIndex: 20,
-        cursor: 'default',
-        willChange: 'transform',
-      }}
-      // When isInserting, animate to the target (shooting star!)
-      animate={isInserting ? {
-        x: targetX - orbitRX * Math.cos(startAngle),
-        y: targetY - orbitRY * Math.sin(startAngle),
-        scale: [1, 1.4, 0.3],
-        opacity: [1, 1, 0],
-      } : { scale: 1, opacity: 1 }}
-      transition={isInserting ? {
-        duration: 0.5,
-        ease: [0.23, 1, 0.32, 1],
-      } : undefined}
-      onAnimationComplete={() => {
-        if (isInserting) onInserted();
-      }}
-      // Appear with a bang
-      initial={{ scale: 0, opacity: 0 }}
-      // Initial appear animation
-      whileHover={{ scale: 1.15 }}
+      animate={isRevealed ? { scale: [1, 1.3, 1] } : { scale: 1 }}
+      transition={{ duration: 0.3, ease: [0.34, 1.56, 0.64, 1] }}
+      className={`
+        w-9 h-11 rounded-xl flex items-center justify-center
+        text-base font-black border-2 transition-all duration-200
+        ${isRevealed
+          ? 'bg-violet-500/25 border-violet-400/70 text-white shadow-[0_0_12px_rgba(139,92,246,0.4)]'
+          : isNext
+          ? 'bg-white/6 border-white/40 text-white/20 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.15)]'
+          : 'bg-white/4 border-white/10 text-white/10'
+        }
+      `}
     >
-      {letter}
-      {/* Glow ring */}
-      <motion.div
-        style={{
-          position: 'absolute',
-          inset: -4,
-          borderRadius: '50%',
-          border: `1.5px solid ${color.glow}`,
-          opacity: 0.4,
-        }}
-        animate={{ scale: [1, 1.3, 1], opacity: [0.4, 0.1, 0.4] }}
-        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-      />
+      {isRevealed ? char : ''}
     </motion.div>
   );
 }
@@ -200,256 +203,205 @@ export function OrbitHintSystem({
   onRevealComplete,
   onEarlySolve,
 }: OrbitHintSystemProps) {
-  const word = card.back.trim();
-  const letters = word.split('').filter(c => c !== ' ');
-  const totalNonSpace = letters.length;
+  const word         = card.back.trim();
+  const cleanWord    = word.toUpperCase().replace(/ /g, '');
+  const totalLetters = cleanWord.length;
 
-  const [revealedCount, setRevealedCount] = useState(0);
-  const [insertingIndex, setInsertingIndex] = useState<number | null>(null);
-  const [orbsVisible, setOrbsVisible] = useState(true);
-  const [earlyGuessMode, setEarlyGuessMode] = useState(false);
-  const [guessInput, setGuessInput] = useState('');
-  const [guessResult, setGuessResult] = useState<'correct' | 'wrong' | null>(null);
-  const [totalXPSpent, setTotalXPSpent] = useState(0);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // Build the display array (chars + space markers)
-  const displayChars = word.split('').map((c, i) => ({
-    char: c.toUpperCase(),
-    isSpace: c === ' ',
-    originalIndex: i,
-    nonSpaceIndex: word.slice(0, i + 1).replace(/ /g, '').length - 1,
+  // Display structure: chars with space markers
+  const displayChars = word.split('').map((c, rawIdx) => ({
+    char:       c.toUpperCase(),
+    isSpace:    c === ' ',
+    letterIdx:  c !== ' '
+      ? word.slice(0, rawIdx + 1).replace(/ /g, '').length - 1
+      : -1,
   }));
 
-  // How many letters are currently revealed in the display
-  const revealedSet = new Set(
-    displayChars
-      .filter(d => !d.isSpace && d.nonSpaceIndex < revealedCount)
-      .map(d => d.nonSpaceIndex)
-  );
+  const [nextBlankIdx,   setNextBlankIdx]   = useState(0);
+  const [filledLetters,  setFilledLetters]   = useState<(string | null)[]>(() => Array(totalLetters).fill(null));
+  const [pool,           setPool]            = useState<OrbData[]>(() => buildPool(word, 0));
+  const [wrongOrbId,     setWrongOrbId]      = useState<string | null>(null);
+  const [animatingOrbId, setAnimatingOrbId]  = useState<string | null>(null);  // orb flying toward blank
+  const [isDone,         setIsDone]          = useState(false);
 
-  // Reveal next letter (costs XP)
-  const revealNextLetter = useCallback(() => {
-    if (revealedCount >= totalNonSpace) return;
-    const cost = XP_COSTS.HINT_LETTER;
-    const success = onSpendXP(cost);
-    if (!success) return;
+  /* ── Tap an orb ── */
+  const handleTap = useCallback((orb: OrbData) => {
+    if (animatingOrbId !== null || isDone) return;
 
-    setTotalXPSpent(prev => prev + cost);
-    setInsertingIndex(revealedCount);
-  }, [revealedCount, totalNonSpace, onSpendXP]);
+    const expected = cleanWord[nextBlankIdx];
+    if (orb.letter === expected) {
+      // ✅ Correct
+      setAnimatingOrbId(orb.id);
+      onSpendXP(XP_COSTS.HINT_LETTER); // charge XP per placed letter
+    } else {
+      // ❌ Wrong – shake + red glow
+      setWrongOrbId(orb.id);
+      setTimeout(() => setWrongOrbId(null), 600);
+    }
+  }, [animatingOrbId, isDone, cleanWord, nextBlankIdx, onSpendXP]);
 
-  // After orb finishes "flying" into the tile
-  const handleOrbInserted = useCallback(() => {
-    setRevealedCount(prev => {
-      const next = prev + 1;
-      if (next >= totalNonSpace) {
-        setOrbsVisible(false);
-        onRevealComplete();
-      }
-      return next;
-    });
-    setInsertingIndex(null);
-  }, [totalNonSpace, onRevealComplete]);
+  /* ── Called when the comet animation completes ── */
+  const handleOrbAnimDone = useCallback(() => {
+    const letter  = cleanWord[nextBlankIdx];
+    const newFilled = filledLetters.map((v, i) => i === nextBlankIdx ? letter : v);
+    setFilledLetters(newFilled);
 
-  // Auto-reveal: after 2.5s delay, reveal next letter
-  useEffect(() => {
-    if (revealedCount >= totalNonSpace || insertingIndex !== null || earlyGuessMode) return;
-    const timer = setTimeout(revealNextLetter, 2500);
-    return () => clearTimeout(timer);
-  }, [revealedCount, insertingIndex, earlyGuessMode, revealNextLetter, totalNonSpace]);
+    const nextIdx = nextBlankIdx + 1;
+    setNextBlankIdx(nextIdx);
+    setAnimatingOrbId(null);
 
-  // Early guess submission
-  const submitGuess = () => {
-    const correct = guessInput.trim().toLowerCase() === word.toLowerCase();
-    setGuessResult(correct ? 'correct' : 'wrong');
+    if (nextIdx >= totalLetters) {
+      setIsDone(true);
+      onRevealComplete();
+    } else {
+      setPool(buildPool(word, nextIdx));
+    }
+  }, [cleanWord, nextBlankIdx, filledLetters, totalLetters, word, onRevealComplete]);
 
-    if (correct) {
-      // XP bonus for early solve (less letters revealed = more bonus)
-      const lettersRemaining = totalNonSpace - revealedCount;
-      const bonus = Math.floor(XP_REWARDS.EARLY_SOLVE * (lettersRemaining / totalNonSpace));
+  /* ── Reveal all remaining letters ── */
+  const handleRevealAll = useCallback(() => {
+    const allLetters = cleanWord.split('');
+    setFilledLetters(allLetters);
+    setNextBlankIdx(totalLetters);
+    setIsDone(true);
+
+    const remaining = totalLetters - nextBlankIdx;
+    const bonus     = Math.ceil((remaining / totalLetters) * XP_REWARDS.EARLY_SOLVE);
+    if (bonus > 0) {
       onGainXP(bonus);
       onEarlySolve(true, bonus);
-      setRevealedCount(totalNonSpace);
-      setOrbsVisible(false);
     } else {
-      setTimeout(() => {
-        setGuessResult(null);
-        setGuessInput('');
-      }, 1000);
+      onRevealComplete();
     }
-  };
+  }, [cleanWord, totalLetters, nextBlankIdx, onGainXP, onEarlySolve, onRevealComplete]);
 
-  // Non-space letters as orbs (only unrevealed ones)
-  const orbLetters = letters.slice(revealedCount).map((letter, i) => ({
-    letter: letter.toUpperCase(),
-    orbitIndex: i,
-  }));
-
-  const orbitCenterRX = 110;
-  const orbitCenterRY = 55;
-
-  const canAfford = xp >= XP_COSTS.HINT_LETTER;
-
+  /* ── Render ── */
   return (
-    <div className="flex flex-col items-center gap-6 w-full">
+    <div className="flex flex-col w-full gap-3 select-none">
 
-      {/* ── Question label ── */}
-      <div className="text-center">
+      {/* ── Orb Float Zone ── */}
+      <div className="relative w-full" style={{ minHeight: 200 }}>
+
+        {/* Decorative orbit rings */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div style={{
+            width: '85%', height: '72%',
+            borderRadius: '50%',
+            border: '1px solid rgba(167,139,250,0.08)',
+            transform: 'rotate(-15deg)',
+          }} />
+          <div style={{
+            position: 'absolute',
+            width: '65%', height: '54%',
+            borderRadius: '50%',
+            border: '1px solid rgba(6,182,212,0.06)',
+            transform: 'rotate(10deg)',
+          }} />
+        </div>
+
+        {/* Floating letter orbs */}
+        <AnimatePresence>
+          {pool.map(orb => {
+            if (orb.id === animatingOrbId) {
+              // Comet animation: shrink and fly down toward the blank area
+              return (
+                <motion.div
+                  key={orb.id}
+                  initial={{ scale: 1, opacity: 1,  left: ZONES[orb.zone].x, top: ZONES[orb.zone].y }}
+                  animate={{ scale: 0.15, opacity: 0, y: 180 }}
+                  transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+                  onAnimationComplete={handleOrbAnimDone}
+                  style={{
+                    position: 'absolute',
+                    left: ZONES[orb.zone].x,
+                    top:  ZONES[orb.zone].y,
+                    width: 56, height: 56,
+                    borderRadius: '50%',
+                    background: `linear-gradient(135deg, ${ORB_COLORS[orb.colorIdx % ORB_COLORS.length].from}, ${ORB_COLORS[orb.colorIdx % ORB_COLORS.length].to})`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 22, fontWeight: 900, color: '#fff',
+                    pointerEvents: 'none', zIndex: 20,
+                  }}
+                >
+                  {orb.letter}
+                  {/* Comet trail */}
+                  <div style={{
+                    position: 'absolute', inset: -6, borderRadius: '50%',
+                    background: ORB_COLORS[orb.colorIdx % ORB_COLORS.length].from,
+                    opacity: 0.3, filter: 'blur(8px)', zIndex: -1,
+                  }} />
+                </motion.div>
+              );
+            }
+
+            return (
+              <FloatOrb
+                key={orb.id}
+                orb={orb}
+                isWrong={wrongOrbId === orb.id}
+                onTap={() => handleTap(orb)}
+              />
+            );
+          })}
+        </AnimatePresence>
+      </div>
+
+      {/* ── Target word (center) ── */}
+      <div className="text-center py-1">
         <p className="text-[9px] font-black text-white/30 uppercase tracking-[0.3em] mb-1">
           Wie heißt das auf Deutsch?
         </p>
-        <h2 className="text-3xl font-black text-white tracking-tight">
+        <h2 className="text-3xl font-black text-white tracking-tight leading-tight">
           {card.front}
         </h2>
         {card.exampleFront && (
-          <p className="text-sm text-white/40 italic mt-1 max-w-xs mx-auto leading-relaxed">
+          <p className="text-xs text-white/35 italic mt-1 max-w-[260px] mx-auto leading-relaxed">
             „{card.exampleFront}"
           </p>
         )}
       </div>
 
-      {/* ── Orbit Arena ── */}
-      <div ref={containerRef} className="relative w-full" style={{ height: 200 }}>
-        {/* Orbit ring decorations */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div
-            className="rounded-full border border-white/5"
-            style={{ width: orbitCenterRX * 2 + 60, height: orbitCenterRY * 2 + 60 }}
-          />
-          <div
-            className="absolute rounded-full border border-white/[0.03]"
-            style={{ width: orbitCenterRX * 2 + 100, height: orbitCenterRY * 2 + 100 }}
-          />
-        </div>
-
-        {/* Fill-in-the-blank word */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="flex flex-wrap justify-center gap-1.5">
-            {displayChars.map((d, i) => (
-              <LetterTile
-                key={i}
-                char={d.char}
-                isSpace={d.isSpace}
-                isRevealed={!d.isSpace && d.nonSpaceIndex < revealedCount}
-                delay={0}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Orbiting letter orbs */}
-        {orbsVisible && orbLetters.map((orb, i) => {
-          const angle = (i / Math.max(orbLetters.length, 1)) * Math.PI * 2;
-          const speed = 0.4 + (i % 3) * 0.1;
-          const isCurrentlyInserting = insertingIndex === revealedCount && i === 0;
-
+      {/* ── Letter blanks (below word) ── */}
+      <div className="flex flex-wrap justify-center gap-1.5 px-2 py-2">
+        {displayChars.map((d, i) => {
+          if (d.isSpace) return <div key={i} className="w-2" />;
+          const isRevealed = d.letterIdx >= 0 && filledLetters[d.letterIdx] !== null;
+          const isNext     = d.letterIdx === nextBlankIdx && !isDone;
           return (
-            <motion.div
-              key={`orb-${revealedCount + i}`}
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: i * 0.12, type: 'spring', stiffness: 300, damping: 20 }}
-            >
-              <OrbitOrb
-                letter={orb.letter}
-                colorIndex={revealedCount + i}
-                orbitRX={orbitCenterRX + (i % 2) * 18}
-                orbitRY={orbitCenterRY + (i % 3) * 8}
-                speed={speed}
-                startAngle={angle}
-                size={36 - Math.min(i, 4) * 2}
-                isInserting={isCurrentlyInserting}
-                targetX={0}
-                targetY={0}
-                onInserted={handleOrbInserted}
-              />
-            </motion.div>
+            <LetterBlank
+              key={i}
+              char={d.char}
+              isRevealed={isRevealed}
+              isNext={isNext}
+            />
           );
         })}
       </div>
 
-      {/* ── Early Guess Area ── */}
-      <AnimatePresence mode="wait">
-        {!earlyGuessMode ? (
-          <motion.div
-            key="hint-controls"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="w-full space-y-3"
+      {/* ── Footer: XP info + reveal button ── */}
+      <div className="flex flex-col items-center gap-3 pt-1">
+        <div className="flex items-center gap-1.5 text-[10px] text-white/35 font-bold">
+          <Zap size={11} className="text-amber-400/60 fill-current" />
+          <span>{xp} XP verfügbar</span>
+          <span className="text-amber-400/60 font-black">· −{XP_COSTS.HINT_LETTER} XP/Buchstabe</span>
+        </div>
+
+        {!isDone && nextBlankIdx < totalLetters && (
+          <motion.button
+            whileTap={{ scale: 0.94 }}
+            onClick={handleRevealAll}
+            className="px-6 py-2.5 rounded-2xl bg-white/6 border border-white/12
+              text-white/50 font-black text-[10px] uppercase tracking-wider
+              hover:bg-white/10 transition-all"
           >
-            {/* XP cost info */}
-            <div className="flex items-center justify-center gap-2 text-[10px] font-bold text-white/40">
-              <Lightbulb size={12} className="text-amber-400/60" />
-              <span>Buchstaben fliegen automatisch ein</span>
-              <span className="text-amber-400/70 font-black">−{XP_COSTS.HINT_LETTER} XP/Buchstabe</span>
-            </div>
-
-            {/* "Ich kenn's!" button */}
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setEarlyGuessMode(true)}
-              className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 text-amber-300 font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2"
-            >
-              <Edit3 size={16} />
-              Ich kenn's! <span className="text-amber-400/60 text-xs">(+bis zu {XP_REWARDS.EARLY_SOLVE} XP Bonus)</span>
-            </motion.button>
-
-            {/* XP display */}
-            <div className="flex items-center justify-center gap-1.5">
-              <Zap size={12} className="text-amber-400/60 fill-current" />
-              <span className="text-[11px] font-black text-white/50">{xp} XP verfügbar</span>
-            </div>
-          </motion.div>
-        ) : (
-          <motion.div
-            key="guess-input"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="w-full space-y-3"
-          >
-            <div className="relative">
-              <input
-                autoFocus
-                type="text"
-                value={guessInput}
-                onChange={e => setGuessInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && submitGuess()}
-                placeholder="Deutsch eingeben..."
-                className={`w-full px-5 py-4 rounded-2xl text-center text-lg font-black outline-none transition-all ${
-                  guessResult === 'wrong'
-                    ? 'bg-red-500/20 border-2 border-red-500/60 text-red-300 animate-shake'
-                    : guessResult === 'correct'
-                    ? 'bg-emerald-500/20 border-2 border-emerald-500/60 text-emerald-300'
-                    : 'bg-white/5 border-2 border-white/10 text-white focus:border-violet-500/60'
-                }`}
-              />
-              {guessResult === 'correct' && (
-                <CheckCircle className="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-400" size={22} />
-              )}
-            </div>
-
-            <div className="flex gap-3">
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={() => { setEarlyGuessMode(false); setGuessInput(''); setGuessResult(null); }}
-                className="flex-1 py-3 rounded-xl text-white/40 font-bold text-xs uppercase tracking-wider bg-white/5"
-              >
-                Zurück
-              </motion.button>
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={submitGuess}
-                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-purple-700 text-white font-black text-xs uppercase tracking-wider shadow-lg shadow-violet-700/30"
-              >
-                Prüfen ✓
-              </motion.button>
-            </div>
-          </motion.div>
+            ✨ Lösung aufdecken
+            {nextBlankIdx > 0 && (
+              <span className="ml-1.5 text-amber-400/60">
+                (+{Math.ceil(((totalLetters - nextBlankIdx) / totalLetters) * XP_REWARDS.EARLY_SOLVE)} XP)
+              </span>
+            )}
+          </motion.button>
         )}
-      </AnimatePresence>
+      </div>
     </div>
   );
 }
