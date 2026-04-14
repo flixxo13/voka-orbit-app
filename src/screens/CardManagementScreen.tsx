@@ -120,7 +120,7 @@ export function CardManagementScreen({ deckId, onBack }: { deckId: number, onBac
             whileHover={{ scale: 1.1, rotate: 90 }}
             whileTap={{ scale: 0.9 }}
             onClick={() => setShowAddModal(true)}
-            className="p-4 bg-orbit-purple text-white rounded-2xl shadow-2xl shadow-orbit-purple/40 hover:bg-orbit-indigo transition-all border border-white/20 sm:flex hidden"
+            className="p-4 bg-orbit-purple text-white rounded-2xl shadow-2xl shadow-orbit-purple/40 hover:bg-orbit-indigo transition-all border border-white/20 flex"
           >
             <Plus size={28} />
           </motion.button>
@@ -237,19 +237,19 @@ export function CardManagementScreen({ deckId, onBack }: { deckId: number, onBac
         </motion.div>
       </div>
 
-      {/* Floating Action Button (FAB) matching the video vibe */}
+      {/* Floating Action Button (FAB) – sits above the global bottom nav */}
       <motion.div 
         initial={{ opacity: 0, y: 100 }}
         animate={{ opacity: 1, y: 0 }}
-        className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[90]"
+        className="fixed bottom-28 left-1/2 -translate-x-1/2 z-[95]"
       >
         <motion.button 
-          whileHover={{ scale: 1.1, y: -5 }}
-          whileTap={{ scale: 0.9 }}
+          whileHover={{ scale: 1.05, y: -3 }}
+          whileTap={{ scale: 0.92 }}
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-3 px-8 py-4 bg-white/10 backdrop-blur-2xl text-white rounded-full shadow-2xl shadow-black/50 border border-white/10 font-black uppercase tracking-[0.2em] text-[10px]"
+          className="flex items-center gap-3 px-7 py-3.5 bg-violet-600/90 backdrop-blur-2xl text-white rounded-full shadow-2xl shadow-violet-900/60 border border-violet-400/20 font-black uppercase tracking-[0.15em] text-[10px]"
         >
-          <Plus size={18} />
+          <Plus size={16} />
           Vokabel hinzufügen
         </motion.button>
       </motion.div>
