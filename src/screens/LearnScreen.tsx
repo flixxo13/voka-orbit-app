@@ -1,5 +1,3 @@
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../core/storage-local';
 import { useSession } from '../hooks/useSession';
 import { useSettings, XP_REWARDS, XP_COSTS } from '../hooks/useSettings';
 import { OrbitCard } from '../components/OrbitCard';
@@ -7,10 +5,10 @@ import { OrbitHintSystem } from '../components/FloatingHints';
 import { GradeFeedback } from '../components/GradeFeedback';
 import { XPToast } from '../components/XPBar';
 import { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, useMotionValue, useTransform } from 'motion/react';
 import { ArrowLeft, Star, Rocket, Check, X, FastForward, Zap } from 'lucide-react';
 
-type LearnPhase = 'card' | 'hint' | 'grading';
+type LearnPhase = 'card' | 'hint';
 
 interface PendingXP { amount: number; label: string; key: number }
 
@@ -25,11 +23,18 @@ export function LearnScreen({ deckId, onBack }: { deckId?: number; onBack: () =>
   const [pendingXP, setPendingXP] = useState<PendingXP[]>([]);
   const [xpKey, setXpKey] = useState(0);
 
+  // Swipe gesture motion values
+  const dragX = useMotionValue(0);
+  const cardRotate = useTransform(dragX, [-180, 0, 180], [-6, 0, 6]);
+  const leftOpacity = useTransform(dragX, [-150, -50, 0], [1, 0.4, 0]);
+  const rightOpacity = useTransform(dragX, [0, 50, 150], [0, 0.4, 1]);
+
   // Reset per card
   useEffect(() => {
     setPhase('card');
     setIsFlipped(false);
     setHintsUsedThisCard(0);
+    dragX.set(0);
   }, [currentCard?.id]);
 
   /* ── XP helpers ── */
@@ -51,7 +56,6 @@ export function LearnScreen({ deckId, onBack }: { deckId?: number; onBack: () =>
 
   /* ── Grade a card ── */
   const handleGrade = useCallback(async (grade: 1 | 2 | 3 | 4) => {
-    // Calculate XP for this grade
     let xpEarned = 0;
     if (grade >= 3) {
       xpEarned += XP_REWARDS.CARD_CORRECT;
@@ -67,24 +71,35 @@ export function LearnScreen({ deckId, onBack }: { deckId?: number; onBack: () =>
     setTimeout(async () => {
       setGradeFeedback(null);
       setPhase('card');
+      setIsFlipped(false);
+      dragX.set(0);
       await submitReview(grade);
     }, 850);
-  }, [hintsUsedThisCard, gainXP, incrementStreak, showXP, submitReview]);
+  }, [hintsUsedThisCard, gainXP, incrementStreak, showXP, submitReview, dragX]);
 
-  /* ── Hint reveal complete → go to grading ── */
+  /* ── Hint reveal complete → flip card, back to card phase ── */
   const handleRevealComplete = useCallback(() => {
     setIsFlipped(true);
-    setPhase('grading');
+    setPhase('card');
   }, []);
 
   /* ── Early solve ── */
   const handleEarlySolve = useCallback((correct: boolean, bonus: number) => {
     if (correct) {
       setIsFlipped(true);
-      setPhase('grading');
+      setPhase('card');
       showXP(bonus, '⚡ Bonus!');
     }
   }, [showXP]);
+
+  /* ── Swipe-to-grade handler ── */
+  const handleDragEnd = useCallback((_: unknown, info: { offset: { x: number } }) => {
+    dragX.set(0);
+    if (Math.abs(info.offset.x) > 80) {
+      if (info.offset.x < 0) handleGrade(1);  // Swipe left = Nochmal
+      else handleGrade(3);                      // Swipe right = Gut
+    }
+  }, [handleGrade, dragX]);
 
   /* ──────────────── LOADING ──────────────── */
   if (isLoading) {
@@ -125,7 +140,6 @@ export function LearnScreen({ deckId, onBack }: { deckId?: number; onBack: () =>
           </p>
         </div>
 
-        {/* Session stats */}
         {hasCards && (
           <div className="glass-card p-4 w-full max-w-xs">
             <div className="grid grid-cols-3 gap-3 text-center">
@@ -211,59 +225,18 @@ export function LearnScreen({ deckId, onBack }: { deckId?: number; onBack: () =>
         </div>
       </div>
 
-      {/* ── Content Area ── */}
+      {/* ── Content ── */}
       <AnimatePresence mode="wait">
 
-        {/* PHASE: Card */}
+        {/* PHASE: Card – tap to flip front↔back, swipe to grade */}
         {phase === 'card' && (
           <motion.div
             key="card-phase"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.92, filter: 'blur(4px)' }}
-            transition={{ duration: 0.35 }}
-            className="flex flex-col items-center gap-6"
-          >
-            <OrbitCard
-              card={currentCard}
-              isFlipped={isFlipped}
-              onReveal={() => { setIsFlipped(true); setPhase('grading'); }}
-              disableTapReveal={false}
-            />
-
-            {/* Actions */}
-            <div className="w-full max-w-md flex gap-3">
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={() => { setIsFlipped(true); setPhase('grading'); }}
-                className="flex-1 h-16 bg-gradient-to-r from-violet-600 to-purple-700 text-white font-black text-sm rounded-2xl shadow-xl shadow-violet-700/30 uppercase tracking-[0.2em]"
-              >
-                AUFDECKEN
-              </motion.button>
-
-              <motion.button
-                whileTap={{ scale: 0.9 }}
-                onClick={() => setPhase('hint')}
-                className="w-16 h-16 rounded-2xl glass-card flex flex-col items-center justify-center gap-1 text-amber-400 border border-amber-500/20"
-              >
-                <span className="text-lg">💡</span>
-                <span className="text-[8px] font-black uppercase tracking-tighter text-amber-400/60">
-                  -{XP_COSTS.HINT_LETTER}XP
-                </span>
-              </motion.button>
-            </div>
-          </motion.div>
-        )}
-
-        {/* PHASE: Hint (Orbit Letters) */}
-        {phase === 'hint' && (
-          <motion.div
-            key="hint-phase"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.35 }}
-            className="glass-card p-6 relative"
+            transition={{ duration: 0.3 }}
+            className="flex flex-col items-center gap-5"
           >
             {/* Grade feedback overlay */}
             <AnimatePresence>
@@ -276,6 +249,88 @@ export function LearnScreen({ deckId, onBack }: { deckId?: number; onBack: () =>
               )}
             </AnimatePresence>
 
+            {/* Card + swipe wrapper */}
+            <div className="relative w-full">
+              {/* Swipe indicators */}
+              <motion.div style={{ opacity: leftOpacity }}
+                className="absolute left-2 top-1/2 -translate-y-1/2 z-10 flex items-center gap-1 text-red-400 font-black text-xs pointer-events-none select-none">
+                ↩ Nochmal
+              </motion.div>
+              <motion.div style={{ opacity: rightOpacity }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 z-10 flex items-center gap-1 text-emerald-400 font-black text-xs pointer-events-none select-none">
+                Gut ↪
+              </motion.div>
+
+              <motion.div
+                drag="x"
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={0.12}
+                style={{ x: dragX, rotate: cardRotate }}
+                onDragEnd={handleDragEnd}
+                className="touch-pan-y cursor-grab active:cursor-grabbing"
+              >
+                <OrbitCard
+                  card={currentCard}
+                  isFlipped={isFlipped}
+                  onReveal={() => setIsFlipped(f => !f)}
+                  disableTapReveal={false}
+                />
+              </motion.div>
+            </div>
+
+            {/* ─ Grade buttons (back side only) ─ */}
+            <AnimatePresence>
+              {isFlipped && (
+                <motion.div
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 8 }}
+                  transition={{ duration: 0.2 }}
+                  className="w-full max-w-md grid grid-cols-4 gap-2"
+                >
+                  {GRADE_BUTTONS.map(btn => (
+                    <GradeBtn key={btn.grade} {...btn} onClick={() => handleGrade(btn.grade as 1|2|3|4)} />
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* ─ Hint button (front side only) ─ */}
+            <AnimatePresence>
+              {!isFlipped && (
+                <motion.button
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setPhase('hint')}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-2xl glass-card border border-amber-500/20 text-amber-400 text-xs font-black uppercase tracking-wider"
+                >
+                  💡 Buchstaben-Hinweis
+                  <span className="text-amber-400/50">−{XP_COSTS.HINT_LETTER} XP</span>
+                </motion.button>
+              )}
+            </AnimatePresence>
+
+            {/* Swipe hint label */}
+            {!isFlipped && (
+              <p className="text-[9px] font-bold text-white/15 uppercase tracking-widest select-none">
+                ← Nochmal · Tippen zum Umdrehen · Gut →
+              </p>
+            )}
+          </motion.div>
+        )}
+
+        {/* PHASE: Hint (Orbit Letters) */}
+        {phase === 'hint' && (
+          <motion.div
+            key="hint-phase"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+            className="flex flex-col min-h-[62vh]"
+          >
             <OrbitHintSystem
               card={currentCard}
               xp={settings.xp}
@@ -284,56 +339,6 @@ export function LearnScreen({ deckId, onBack }: { deckId?: number; onBack: () =>
               onRevealComplete={handleRevealComplete}
               onEarlySolve={handleEarlySolve}
             />
-
-            {/* Grade buttons (shown after reveal) */}
-            <AnimatePresence>
-              {phase === 'hint' && isFlipped && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="mt-4 grid grid-cols-4 gap-2"
-                >
-                  {GRADE_BUTTONS.map(btn => (
-                    <GradeBtn key={btn.grade} {...btn} onClick={() => handleGrade(btn.grade as 1|2|3|4)} />
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
-        )}
-
-        {/* PHASE: Grading (card fully revealed) */}
-        {phase === 'grading' && (
-          <motion.div
-            key="grading-phase"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0 }}
-            className="flex flex-col items-center gap-6 relative"
-          >
-            {/* Grade feedback */}
-            <AnimatePresence>
-              {gradeFeedback && (
-                <GradeFeedback
-                  grade={gradeFeedback.grade as 1 | 2 | 3 | 4}
-                  xpGained={gradeFeedback.xp}
-                  onDone={() => setGradeFeedback(null)}
-                />
-              )}
-            </AnimatePresence>
-
-            <OrbitCard
-              card={currentCard}
-              isFlipped={true}
-              onReveal={() => {}}
-              disableTapReveal={true}
-            />
-
-            <div className="w-full max-w-md grid grid-cols-4 gap-2">
-              {GRADE_BUTTONS.map(btn => (
-                <GradeBtn key={btn.grade} {...btn} onClick={() => handleGrade(btn.grade as 1|2|3|4)} />
-              ))}
-            </div>
           </motion.div>
         )}
 
@@ -344,9 +349,9 @@ export function LearnScreen({ deckId, onBack }: { deckId?: number; onBack: () =>
 
 /* ── Grade Button Config ── */
 const GRADE_BUTTONS = [
-  { grade: 1, label: 'Nochmal', icon: <X size={18} />, color: 'text-red-400 bg-red-500/10 border-red-500/20' },
-  { grade: 2, label: 'Schwer',  icon: <FastForward size={18} />, color: 'text-orange-400 bg-orange-500/10 border-orange-500/20' },
-  { grade: 3, label: 'Gut',     icon: <Check size={18} />, color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
+  { grade: 1, label: 'Nochmal', icon: <X size={18} />,            color: 'text-red-400 bg-red-500/10 border-red-500/20' },
+  { grade: 2, label: 'Schwer',  icon: <FastForward size={18} />,  color: 'text-orange-400 bg-orange-500/10 border-orange-500/20' },
+  { grade: 3, label: 'Gut',     icon: <Check size={18} />,         color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
   { grade: 4, label: 'Leicht',  icon: <Star size={18} className="fill-current" />, color: 'text-amber-400 bg-amber-500/10 border-amber-500/20' },
 ] as const;
 
