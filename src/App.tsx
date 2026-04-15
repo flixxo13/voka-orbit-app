@@ -216,31 +216,31 @@ export default function App() {
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             className="bottom-nav"
           >
-            <div className="flex items-center gap-1 bg-white/5 backdrop-blur-2xl px-4 py-3 rounded-[28px] shadow-2xl border border-white/10">
+            <div className="flex items-center justify-around w-full max-w-2xl mx-auto px-2 py-2">
 
               <NavButton
-                icon={<LayoutGrid size={20} />}
+                icon={<LayoutGrid size={22} />}
                 label="Orbit"
                 active={screen === 'decks'}
                 onClick={goHome}
               />
               <NavDivider />
               <NavButton
-                icon={<Rocket size={20} />}
+                icon={<Rocket size={22} />}
                 label="Launch"
                 active={screen === 'launch'}
                 onClick={startGlobalReview}
               />
               <NavDivider />
               <NavButton
-                icon={<Brain size={20} />}
+                icon={<Brain size={22} />}
                 label="Quiz"
                 active={screen === 'quiz'}
                 onClick={() => setScreen('quiz')}
               />
               <NavDivider />
               <NavButton
-                icon={<BarChart3 size={20} />}
+                icon={<BarChart3 size={22} />}
                 label="Stats"
                 active={screen === 'stats'}
                 onClick={() => setScreen('stats')}
@@ -265,16 +265,25 @@ function NavButton({ icon, label, active, onClick }: {
     <motion.button
       whileTap={{ scale: 0.85 }}
       onClick={onClick}
-      className={`flex flex-col items-center gap-1 px-4 py-1 rounded-2xl transition-all ${
-        active ? 'text-violet-400' : 'text-white/30 hover:text-white/60'
+      className={`relative flex flex-col items-center gap-1 px-5 py-2 rounded-2xl transition-all duration-200 ${
+        active ? 'text-violet-400' : 'text-white/40 hover:text-white/60'
       }`}
     >
+      {/* Active glow dot */}
+      {active && (
+        <motion.div
+          layoutId="nav-active-dot"
+          className="absolute -top-1 w-5 h-[3px] rounded-full bg-violet-500"
+          style={{ boxShadow: '0 0 10px rgba(124, 58, 237, 0.8), 0 0 20px rgba(124, 58, 237, 0.4)' }}
+          transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+        />
+      )}
       {icon}
-      <span className="text-[8px] font-black uppercase tracking-[0.15em]">{label}</span>
+      <span className="text-[10px] font-bold uppercase tracking-[0.12em]">{label}</span>
     </motion.button>
   );
 }
 
 function NavDivider() {
-  return <div className="w-px h-5 bg-white/10 mx-1" />;
+  return <div className="w-px h-6 bg-white/8 mx-0.5" />;
 }
