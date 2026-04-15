@@ -266,6 +266,8 @@ function PlanetDeckCard({ deck, themeIndex, onClick, onDelete, onEdit, onAddCard
 }) {
   const theme = PLANET_THEMES[themeIndex];
   const cardCount = useLiveQuery(() => db.cards.where('deckId').equals(deck.id).count(), [deck.id]);
+  
+  // Fällige Karten
   const dueCount = useLiveQuery(async () => {
     const now = Date.now();
     const reviews = await db.reviews.where('nextDueAt').belowOrEqual(now).toArray();
@@ -273,61 +275,88 @@ function PlanetDeckCard({ deck, themeIndex, onClick, onDelete, onEdit, onAddCard
     return db.cards.where('id').anyOf(ids).and(c => c.deckId === deck.id).count();
   }, [deck.id]);
 
+  // Gelernte Karten (Karten mit Review, die in der Zukunft liegen)
+  const learnedCount = useLiveQuery(async () => {
+    const now = Date.now();
+    const reviews = await db.reviews.where('nextDueAt').above(now).toArray();
+    const ids = reviews.map(r => r.cardId);
+    return db.cards.where('id').anyOf(ids).and(c => c.deckId === deck.id).count();
+  }, [deck.id]);
+
   const total = cardCount ?? 0;
   const due = dueCount ?? 0;
+  const learned = learnedCount ?? 0;
   const isActive = deck.isActive !== false;
   const pct = total > 0 ? Math.round(((total - due) / total) * 100) : 0;
   const circumference = 2 * Math.PI * 22;
+
+  const firstLetter = deck.name ? deck.name.charAt(0).toUpperCase() : '?';
 
   return (
     <motion.div
       whileHover={isActive ? { y: -3, scale: 1.01 } : {}}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
-      className={`glass-card p-5 flex items-center gap-4 cursor-pointer transition-opacity ${!isActive ? 'opacity-50' : ''}`}
+      className={`glass-card p-4 flex flex-col gap-4 cursor-pointer transition-opacity ${!isActive ? 'opacity-50' : ''}`}
     >
-      {/* Planet with progress ring */}
-      <div className="relative shrink-0 w-16 h-16">
-        {/* SVG progress ring */}
-        <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 56 56">
-          <circle cx="28" cy="28" r="22" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="3" />
-          <motion.circle
-            cx="28" cy="28" r="22" fill="none"
-            stroke={isActive ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.1)'}
-            strokeWidth="3"
-            strokeLinecap="round"
-            strokeDasharray={circumference}
-            animate={{ strokeDashoffset: circumference * (1 - pct / 100) }}
-            transition={{ duration: 1, ease: [0.23, 1, 0.32, 1] }}
-          />
-        </svg>
-        {/* Planet globe */}
-        <div className={`absolute inset-2 rounded-full bg-gradient-to-br ${theme.gradient} shadow-lg ${theme.glow} flex items-center justify-center`}>
-          <Book size={18} className="text-white/80" />
-        </div>
-      </div>
-
-      {/* Info */}
-      <div className="flex-1 min-w-0">
-        <h3 className="font-black text-white text-base truncate tracking-tight">{deck.name}</h3>
-        <div className="flex items-center gap-3 mt-1 flex-wrap">
-          <span className="text-[10px] font-black text-white/40 uppercase tracking-wider">{deck.language}</span>
-          <span className="text-[10px] font-bold text-white/30">{total} Karten</span>
-          {due > 0 && isActive && (
-            <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${theme.badge}`}>
-              {due} fällig
+      <div className="flex items-center gap-4">
+        {/* Planet with progress ring */}
+        <div className="relative shrink-0 w-16 h-16">
+          {/* SVG progress ring with orbit animation */}
+          <svg className="absolute inset-0 w-full h-full -rotate-90 animate-orbit-slow" viewBox="0 0 56 56">
+            <circle cx="28" cy="28" r="22" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="3" />
+            <motion.circle
+              cx="28" cy="28" r="22" fill="none"
+              stroke={isActive ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.1)'}
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeDasharray={circumference}
+              animate={{ strokeDashoffset: circumference * (1 - pct / 100) }}
+              transition={{ duration: 1, ease: [0.23, 1, 0.32, 1] }}
+            />
+          </svg>
+          
+          {/* Planet globe with float and initial letter */}
+          <div className={`absolute inset-2 rounded-full bg-gradient-to-br ${theme.gradient} shadow-lg ${theme.glow} flex items-center justify-center animate-planet-float`}>
+            <span className="text-white/90 font-black text-2xl tracking-tight leading-none pt-0.5">
+              {firstLetter}
             </span>
+          </div>
+
+          {/* Gamified Due Badge over the planet */}
+          {due > 0 && isActive && (
+            <motion.div 
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className={`absolute -top-1 -right-2 px-1.5 py-0.5 rounded-full flex items-center justify-center shadow-xl border-2 border-[#0A0A2E] z-10 ${theme.badge}`}
+            >
+              <span className="text-[9px] font-black uppercase tracking-wider whitespace-nowrap">{due} fällig</span>
+            </motion.div>
           )}
         </div>
+
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <h3 className="font-black text-white text-base truncate tracking-tight">{deck.name}</h3>
+          <div className="flex flex-col mt-0.5">
+            <span className="text-[10px] font-black text-white/40 uppercase tracking-wider">{deck.language}</span>
+            <span className="text-[10px] font-bold text-white/30 truncate mt-0.5">{total} Karten • {learned} gelernt</span>
+          </div>
+        </div>
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
-        <IconBtn icon={isActive ? <Power size={15} /> : <PowerOff size={15} />} color={isActive ? 'text-emerald-400' : 'text-white/30'} onClick={onToggleActive} title={isActive ? 'Deaktivieren' : 'Aktivieren'} />
-        <IconBtn icon={<Plus size={15} />} color="text-white/40" onClick={onAddCard} title="Vokabel hinzufügen" />
-        <IconBtn icon={<List size={15} />} color="text-white/40" onClick={onManageCards} title="Karten verwalten" />
-        <IconBtn icon={<Edit2 size={15} />} color="text-white/40" onClick={onEdit} title="Bearbeiten" />
-        <IconBtn icon={<Trash2 size={15} />} color="text-red-400/60 hover:text-red-400" onClick={onDelete} title="Löschen" />
+      {/* Action Footer */}
+      <div className="border-t border-white/5 pt-3 flex justify-between items-center" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center gap-1">
+          <IconBtn icon={<Plus size={15} />} color="text-white/40" onClick={onAddCard} title="Vokabel hinzufügen" />
+          <IconBtn icon={<List size={15} />} color="text-white/40" onClick={onManageCards} title="Karten verwalten" />
+        </div>
+        <div className="flex items-center gap-1">
+          <IconBtn icon={<Edit2 size={15} />} color="text-white/40" onClick={onEdit} title="Bearbeiten" />
+          <IconBtn icon={<Trash2 size={15} />} color="text-red-400/60 hover:text-red-400" onClick={onDelete} title="Löschen" />
+          <div className="w-px h-4 bg-white/10 mx-1" />
+          <IconBtn icon={isActive ? <Power size={15} /> : <PowerOff size={15} />} color={isActive ? 'text-emerald-400' : 'text-white/30'} onClick={onToggleActive} title={isActive ? 'Deaktivieren' : 'Aktivieren'} />
+        </div>
       </div>
     </motion.div>
   );
