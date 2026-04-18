@@ -1,0 +1,1 @@
+- Buchstabenhinweis, bei Auswahl von Buchstaben, werden falsche Buchstabe in den Lückentext eingesetzt, hinzukommt mehr Buchstaben werden teilweise benötigt. 
