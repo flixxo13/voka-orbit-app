@@ -3,3 +3,5 @@
 - Orbit, Decks, Karten gesamt und Karten gelernt Anzahl: sobald gelernt , dann wird die Zahl erhöht, was wenn die selbe Vokabel später nicht erinnert werden konnte ? Anzahl aktualisieren. 
 
 - Beispielsatz soll wieder eingeklappt werden bei nächster Vokabel
+
+- Im Lernmodus einen Visualsierungsmodus starten können und eine Eselsbrücke erarbeiten können
