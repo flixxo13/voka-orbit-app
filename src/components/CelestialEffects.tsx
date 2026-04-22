@@ -1,96 +1,233 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 
-export const CelestialEffects = () => {
-  const [comet, setComet] = useState<{ id: number; start: any; end: any } | null>(null);
-  const [shootingStar, setShootingStar] = useState<{ id: number; x: number; y: number; tx: number; ty: number } | null>(null);
+type EffectsConfig = {
+  stars?: boolean;
+  nebula?: boolean;
+  comet?: boolean;
+  shootingStars?: boolean;
+  gasGiant?: boolean;
+  pulse?: boolean;
+};
 
-  useEffect(() => {
-    // 1. STERNSCHNUPPEN: Jetzt über die VOLLE Höhe verteilt
-    const triggerStar = () => {
-      const delay = Math.random() * 3000 + 4000;
-      return setTimeout(() => {
-        const startY = Math.random() * 90; // Von 0% bis 90% der Höhe
-        setShootingStar({ 
-          id: Date.now(), 
-          x: Math.random() * 80, 
-          y: startY,
-          tx: 20 + Math.random() * 20, // Flugweite X
-          ty: 10 + Math.random() * 20  // Flugweite Y
-        });
-        triggerStar();
-      }, delay);
-    };
+export const CelestialEffects = ({
+  config = {
+    stars: true,
+    nebula: true,
+    comet: true,
+    shootingStars: true,
+    gasGiant: true,
+    pulse: true
+  }
+}: { config?: EffectsConfig }) => {
 
-    // 2. DER KOMET: Jetzt VIEL LANGSAMER (8 Sek.) und diagonal über den ganzen Screen
-    const triggerComet = () => {
-      const delay = Math.random() * 20000 + 15000;
-      return setTimeout(() => {
-        const fromLeft = Math.random() > 0.5;
-        setComet({
-          id: Date.now(),
-          // Startet außerhalb des Screens, fliegt diagonal durch die Mitte
-          start: { x: fromLeft ? "-30%" : "130%", y: (Math.random() * 30) + "%" },
-          end: { x: fromLeft ? "130%" : "-30%", y: (Math.random() * 40 + 50) + "%" }
-        });
-        triggerComet();
-      }, delay);
-    };
-
-    const t1 = triggerStar(); const t2 = triggerComet();
-    return () => { clearTimeout(t1); clearTimeout(t2); };
+  /* ─────────────────────────────
+     🌌 PRECOMPUTED STARFIELD
+  ───────────────────────────── */
+  const stars = useMemo(() => {
+    return Array.from({ length: 28 }).map(() => ({
+      x: Math.random() * 100,
+      y: Math.random() * 120, // wichtig für S23 (unteres Drittel!)
+      size: Math.random() * 2 + 1,
+      delay: Math.random() * 5,
+      duration: 2 + Math.random() * 3
+    }));
   }, []);
 
+  /* ─────────────────────────────
+     ☄️ STATES
+  ───────────────────────────── */
+  const [comet, setComet] = useState<any>(null);
+  const [shootingStar, setShootingStar] = useState<any>(null);
+  const [gas, setGas] = useState<any>(null);
+  const [pulseKey, setPulseKey] = useState(0);
+
+  /* ─────────────────────────────
+     🔁 LOOP SYSTEM (clean)
+  ───────────────────────────── */
+  useEffect(() => {
+    let running = true;
+
+    const loop = async () => {
+      while (running) {
+
+        // Shooting Star
+        if (config.shootingStars && Math.random() > 0.6) {
+          setShootingStar({
+            id: Date.now(),
+            x: Math.random() * 80,
+            y: Math.random() * 100
+          });
+        }
+
+        // Comet
+        if (config.comet && Math.random() > 0.85) {
+          const fromLeft = Math.random() > 0.5;
+
+          setComet({
+            id: Date.now(),
+            start: {
+              x: fromLeft ? "-20%" : "120%",
+              y: `${Math.random() * 60 + 10}%`
+            },
+            end: {
+              x: fromLeft ? "120%" : "-20%",
+              y: `${Math.random() * 80 + 20}%`
+            },
+            rotate: fromLeft ? 25 : 155
+          });
+        }
+
+        // Gas Giant (sehr selten)
+        if (config.gasGiant && Math.random() > 0.95) {
+          setGas({
+            id: Date.now(),
+            y: Math.random() * 60 + 10
+          });
+        }
+
+        await new Promise(r => setTimeout(r, 2500));
+      }
+    };
+
+    loop();
+
+    const pulse = setInterval(() => {
+      if (config.pulse) setPulseKey(p => p + 1);
+    }, 40000);
+
+    return () => {
+      running = false;
+      clearInterval(pulse);
+    };
+  }, [config]);
+
+  /* ─────────────────────────────
+     🎯 UI
+  ───────────────────────────── */
   return (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 1 }}>
-      
-      {/* ── BACKGROUND: TWINKLE STARS (Überall verteilt) ── */}
-      {[...Array(30)].map((_, i) => (
-        <div key={i} className="absolute w-[1.5px] h-[1.5px] bg-white rounded-full opacity-20"
-             style={{ left: `${Math.random() * 100}%`, top: `${Math.random() * 100}%` }} />
+    <div className="fixed inset-0 pointer-events-none overflow-hidden z-[1]">
+
+      {/* ✨ STARS */}
+      {config.stars && stars.map((s, i) => (
+        <motion.div
+          key={i}
+          className="absolute rounded-full bg-white"
+          style={{
+            width: s.size,
+            height: s.size,
+            left: `${s.x}%`,
+            top: `${s.y}%`
+          }}
+          animate={{
+            opacity: [0.2, 0.9, 0.2],
+            scale: [1, 1.4, 1]
+          }}
+          transition={{
+            duration: s.duration,
+            delay: s.delay,
+            repeat: Infinity
+          }}
+        />
       ))}
 
-      {/* ── DER KOMET: Langsam, groß & diagonal ── */}
+      {/* 🌌 NEBULA (Diagonal Drift!) */}
+      {config.nebula && (
+        <motion.div
+          className="absolute w-[160%] h-[80%] -left-1/3 top-1/4 rounded-full blur-[120px]"
+          style={{
+            background:
+              "radial-gradient(circle, #7C3AED 0%, transparent 70%)"
+          }}
+          animate={{
+            x: ["-10%", "10%", "-10%"],
+            y: ["0%", "10%", "0%"],
+            opacity: [0.15, 0.25, 0.15]
+          }}
+          transition={{ duration: 25, repeat: Infinity }}
+        />
+      )}
+
+      {/* 🪐 GAS GIANT */}
+      <AnimatePresence>
+        {gas && (
+          <motion.div
+            key={gas.id}
+            initial={{ x: "-120%", opacity: 0 }}
+            animate={{
+              x: "120%",
+              opacity: [0, 0.2, 0.2, 0]
+            }}
+            transition={{ duration: 90, ease: "linear" }}
+            className="absolute w-[500px] h-[500px] rounded-full border border-violet-500/10"
+            style={{
+              top: `${gas.y}%`,
+              boxShadow:
+                "inset 0 0 80px rgba(124,58,237,0.1)"
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ☄️ COMET */}
       <AnimatePresence>
         {comet && (
           <motion.div
             key={comet.id}
-            initial={{ x: comet.start.x, y: comet.start.y, opacity: 0, scale: 0.4 }}
-            animate={{ 
-              x: comet.end.x, 
-              y: comet.end.y, 
-              opacity: [0, 0.8, 0.8, 0], 
-              scale: [0.4, 1.2, 0.6] // 3D-Effekt: Kommt näher und zieht weg
+            initial={{
+              x: comet.start.x,
+              y: comet.start.y,
+              scale: 0.2,
+              opacity: 0
             }}
-            transition={{ duration: 8, ease: "linear" }} // Von 3s auf 8s verlangsamt!
-            className="absolute flex items-center z-50"
-            style={{ rotate: comet.start.x.includes('-') ? '20deg' : '160deg' }}
+            animate={{
+              x: comet.end.x,
+              y: comet.end.y,
+              scale: [0.2, 1.6, 0.3],
+              opacity: [0, 1, 1, 0]
+            }}
+            transition={{ duration: 4, ease: "linear" }}
+            className="absolute flex items-center"
+            style={{ rotate: `${comet.rotate}deg` }}
           >
-            {/* Kometen-Kern */}
-            <div className="w-4 h-4 bg-white rounded-full shadow-[0_0_25px_#fff,0_0_50px_var(--color-orbit-purple)]" />
-            {/* Extra langer Schweif */}
-            <div className="h-[2px] w-[500px]" style={{ 
-              background: 'linear-gradient(90deg, white, var(--color-orbit-purple), transparent)',
-              filter: 'blur(1px)'
-            }} />
+            <div className="w-3 h-3 bg-white rounded-full shadow-[0_0_25px_white]" />
+            <div className="w-[250px] h-[2px] bg-gradient-to-r from-white via-violet-500 to-transparent blur-[1px]" />
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ── STERNSCHNUPPEN: Quer über den Screen ── */}
+      {/* 💫 SHOOTING STAR */}
       <AnimatePresence>
         {shootingStar && (
           <motion.div
             key={shootingStar.id}
-            initial={{ x: `${shootingStar.x}%`, y: `${shootingStar.y}%`, opacity: 0, width: 0 }}
-            animate={{ 
-              x: `${shootingStar.x + shootingStar.tx}%`, 
-              y: `${shootingStar.y + shootingStar.ty}%`, 
-              opacity: [0, 1, 0], 
-              width: [0, 250, 0] 
+            initial={{
+              x: `${shootingStar.x}%`,
+              y: `${shootingStar.y}%`,
+              opacity: 0,
+              width: 0
             }}
-            transition={{ duration: 0.9, ease: "easeOut" }}
-            className="absolute h-[1.5px] bg-white rotate-[25deg] shadow-[0_0_10px_white]"
+            animate={{
+              x: `${shootingStar.x + 30}%`,
+              y: `${shootingStar.y + 20}%`,
+              opacity: [0, 1, 0],
+              width: [0, 180, 0]
+            }}
+            transition={{ duration: 0.7 }}
+            className="absolute h-[1px] bg-white shadow-[0_0_8px_white]"
+          />
+        )}
+      </AnimatePresence>
+
+      {/* 💓 ORBIT PULSE */}
+      <AnimatePresence>
+        {config.pulse && (
+          <motion.div
+            key={pulseKey}
+            initial={{ scale: 0.2, opacity: 0.4 }}
+            animate={{ scale: 2.5, opacity: 0 }}
+            transition={{ duration: 6 }}
+            className="absolute top-1/2 left-1/2 w-[200px] h-[200px] -translate-x-1/2 -translate-y-1/2 border border-cyan-400/20 rounded-full"
           />
         )}
       </AnimatePresence>
