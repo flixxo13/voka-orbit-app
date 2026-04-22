@@ -24,6 +24,7 @@ export default function App() {
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [prevLevel, setPrevLevel] = useState(levelData.level);
 
+  // Level-Up Erkennung
   useEffect(() => {
     if (levelData.level > prevLevel) {
       setShowLevelUp(true);
@@ -55,10 +56,11 @@ export default function App() {
   return (
     <div className="orbit-dark min-h-screen w-full overflow-x-hidden relative">
       
-      {/* LAYER 1: Dynamische Weltraum-Effekte (Liegt hinter der UI) */}
+      {/* ── LAYER 1: WELTRAUM-EFFEKTE ── 
+          Liegt absolut im Hintergrund, z-index wird in der Komponente gesteuert */}
       <CelestialEffects />
 
-      {/* LAYER 2: Overlays (Level Up) */}
+      {/* ── LAYER 2: OVERLAYS ── */}
       <AnimatePresence>
         {showLevelUp && (
           <LevelUpOverlay
@@ -68,10 +70,11 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* LAYER 3: Die eigentliche UI-Struktur (z-10 für Sichtbarkeit über den Sternen) */}
+      {/* ── LAYER 3: HAUPT-UI ── 
+          relative z-10 stellt sicher, dass Klicks und Texte ÜBER den Effekten liegen */}
       <div className="max-w-2xl mx-auto px-4 pt-4 pb-28 relative z-10 min-h-screen flex flex-col safe-top">
 
-        {/* ── HEADER ── */}
+        {/* Header */}
         <AnimatePresence>
           {!isLearning && (
             <motion.header
@@ -114,7 +117,7 @@ export default function App() {
           )}
         </AnimatePresence>
 
-        {/* ── XP BAR ── */}
+        {/* XP Bar */}
         <AnimatePresence>
           {!isLearning && (
             <motion.div
@@ -128,31 +131,31 @@ export default function App() {
           )}
         </AnimatePresence>
 
-        {/* ── MAIN CONTENT ── */}
+        {/* Main Content Area */}
         <main className="flex-1">
           <AnimatePresence mode="wait">
             {screen === 'manage' && manageDeckId ? (
-              <motion.div key="manage" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }}>
+              <motion.div key="manage" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }} transition={{ duration: 0.25 }}>
                 <CardManagementScreen deckId={manageDeckId} onBack={goHome} />
               </motion.div>
             ) : screen === 'stats' ? (
-              <motion.div key="stats" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
+              <motion.div key="stats" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.25 }}>
                 <StatsScreen />
               </motion.div>
             ) : screen === 'quiz' ? (
-              <motion.div key="quiz" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}>
+              <motion.div key="quiz" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.25 }}>
                 <QuizScreen onClose={goHome} />
               </motion.div>
             ) : screen === 'launch' ? (
-              <motion.div key="launch" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}>
+              <motion.div key="launch" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.25 }}>
                 <LaunchScreen onStart={() => setScreen('learn')} />
               </motion.div>
             ) : screen === 'learn' ? (
-              <motion.div key="learn" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }}>
+              <motion.div key="learn" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.25 }}>
                 <LearnScreen deckId={isGlobalReview ? undefined : activeDeckId!} onBack={goHome} />
               </motion.div>
             ) : (
-              <motion.div key="decks" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
+              <motion.div key="decks" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.25 }}>
                 <DeckScreen onSelectDeck={startDeck} onManageCards={(id) => { setManageDeckId(id); setScreen('manage'); }} />
               </motion.div>
             )}
@@ -167,6 +170,7 @@ export default function App() {
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             className="bottom-nav"
           >
             <div className="flex items-center justify-around w-full max-w-2xl mx-auto px-2 py-2">
@@ -185,7 +189,7 @@ export default function App() {
   );
 }
 
-// ... Helfer-Komponenten NavButton & NavDivider bleiben gleich wie in deinem Code
+/* ── Helpers ── */
 function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode; label: string; active: boolean; onClick: () => void; }) {
   return (
     <motion.button
