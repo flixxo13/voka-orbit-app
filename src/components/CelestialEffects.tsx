@@ -4,58 +4,34 @@ import { motion, AnimatePresence } from 'motion/react';
 export const CelestialEffects = () => {
   const [shootingStar, setShootingStar] = useState<{ id: number; x: number; y: number } | null>(null);
 
-  // Logik für zufällige Sternschnuppen (alle 8-15 Sekunden)
+  // TEST: Sofort und alle 4 Sekunden eine fette Sternschnuppe
   useEffect(() => {
     const trigger = () => {
-      const delay = Math.random() * 7000 + 8000; 
-      return setTimeout(() => {
-        setShootingStar({
-          id: Date.now(),
-          x: Math.random() * 80 + 10,
-          y: Math.random() * 40 + 5,
-        });
-        trigger();
-      }, delay);
+      setShootingStar({ id: Date.now(), x: 20 + Math.random() * 50, y: 10 + Math.random() * 30 });
     };
-    const timer = trigger();
-    return () => clearTimeout(timer);
+    trigger(); // Einmal sofort
+    const interval = setInterval(trigger, 4000);
+    return () => clearInterval(interval);
   }, []);
 
   return (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 1 }}>
+    <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 1, border: '2px solid transparent' }}>
       
-      {/* 1. Subtiler Nebel-Drift (nutzt deine Brand-Farbe Violett) */}
-      <motion.div 
-        className="absolute -top-[10%] -right-[10%] w-[80%] h-[70%] rounded-full opacity-10 blur-[120px]"
-        style={{ background: 'var(--color-orbit-purple)' }}
-        animate={{
-          scale: [1, 1.15, 1],
-          opacity: [0.05, 0.12, 0.05],
-        }}
-        transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-      />
+      {/* DEBUG MARKER: Wenn du diesen roten Punkt oben links siehst, läuft die Datei! */}
+      <div className="absolute top-5 left-5 w-3 h-3 bg-red-500 rounded-full shadow-[0_0_10px_red] z-[999]" />
 
-      {/* 2. Pulsierende "lebendige" Sterne im Hintergrund */}
-      {[...Array(12)].map((_, i) => (
+      {/* Extrem helle Test-Sterne */}
+      {[...Array(10)].map((_, i) => (
         <motion.div
-          key={`pulse-${i}`}
-          className="absolute w-[1.5px] h-[1.5px] bg-white rounded-full"
-          style={{
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-            boxShadow: '0 0 4px rgba(255,255,255,0.8)'
-          }}
-          animate={{ opacity: [0.1, 0.7, 0.1] }}
-          transition={{
-            duration: 3 + Math.random() * 4,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: Math.random() * 5
-          }}
+          key={i}
+          className="absolute w-2 h-2 bg-white rounded-full"
+          style={{ left: `${10 + i * 8}%`, top: `${20 + (i % 3) * 10}%` }}
+          animate={{ scale: [1, 2, 1], opacity: [0.5, 1, 0.5] }}
+          transition={{ duration: 1, repeat: Infinity }}
         />
       ))}
 
-      {/* 3. Die Sternschnuppe */}
+      {/* Fette Test-Sternschnuppe */}
       <AnimatePresence>
         {shootingStar && (
           <motion.div
@@ -65,13 +41,11 @@ export const CelestialEffects = () => {
               x: `${shootingStar.x + 20}%`, 
               y: `${shootingStar.y + 15}%`, 
               opacity: [0, 1, 0],
-              width: ['0px', '140px', '0px']
+              width: ['0px', '250px', '0px'] 
             }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="absolute h-[1px] bg-gradient-to-r from-transparent via-white to-transparent rotate-[32deg]"
-            style={{ boxShadow: '0 0 10px rgba(255,255,255,0.5)' }}
-            onAnimationComplete={() => setShootingStar(null)}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="absolute h-1 bg-white rotate-[30deg] z-[999]"
+            style={{ boxShadow: '0 0 20px #fff' }}
           />
         )}
       </AnimatePresence>
