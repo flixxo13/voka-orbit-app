@@ -10,6 +10,7 @@ import { XPBar, LevelUpOverlay } from './components/XPBar';
 import { Rocket, LayoutGrid, BarChart3, Brain } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
+// IMPORT DER NEUEN EFFEKTE
 import { CelestialEffects } from './components/CelestialEffects';
 
 type Screen = 'decks' | 'launch' | 'learn' | 'quiz' | 'stats' | 'manage';
@@ -23,7 +24,6 @@ export default function App() {
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [prevLevel, setPrevLevel] = useState(levelData.level);
 
-  // Detect level-up
   useEffect(() => {
     if (levelData.level > prevLevel) {
       setShowLevelUp(true);
@@ -53,8 +53,12 @@ export default function App() {
   const isLearning = screen === 'learn' || screen === 'launch' || screen === 'manage';
 
   return (
-    <div className="orbit-dark min-h-screen w-full overflow-x-hidden">
-      {/* Level Up Overlay */}
+    <div className="orbit-dark min-h-screen w-full overflow-x-hidden relative">
+      
+      {/* LAYER 1: Dynamische Weltraum-Effekte (Liegt hinter der UI) */}
+      <CelestialEffects />
+
+      {/* LAYER 2: Overlays (Level Up) */}
       <AnimatePresence>
         {showLevelUp && (
           <LevelUpOverlay
@@ -64,9 +68,10 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      <div className="max-w-2xl mx-auto px-4 pt-4 pb-28 relative min-h-screen flex flex-col safe-top">
+      {/* LAYER 3: Die eigentliche UI-Struktur (z-10 für Sichtbarkeit über den Sternen) */}
+      <div className="max-w-2xl mx-auto px-4 pt-4 pb-28 relative z-10 min-h-screen flex flex-col safe-top">
 
-        {/* ── HEADER (versteckt während Lernmodus) ── */}
+        {/* ── HEADER ── */}
         <AnimatePresence>
           {!isLearning && (
             <motion.header
@@ -82,7 +87,6 @@ export default function App() {
                   onClick={goHome}
                   className="cursor-pointer shrink-0"
                 >
-                  {/* VokaOrbit Icon */}
                   <svg width="42" height="42" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <defs>
                       <radialGradient id="hbg" cx="35%" cy="25%">
@@ -99,24 +103,18 @@ export default function App() {
                       stroke="rgba(196,181,253,0.65)" strokeWidth="1.5"
                       transform="rotate(-20 20 21)" fill="none"/>
                     <circle cx="20" cy="19" r="6" fill="url(#hpl)"/>
-                    <circle cx="31.5" cy="14" r="2.2" fill="#06B6D4" opacity="0.95"/>
-                    <circle cx="9.5" cy="27" r="1.6" fill="#F59E0B" opacity="0.85"/>
                   </svg>
                 </motion.div>
                 <div>
-                  <h1 className="text-xl font-black tracking-tighter text-white leading-none">
-                    VokaOrbit
-                  </h1>
-                  <p className="text-[9px] font-bold text-white/30 uppercase tracking-[0.18em] mt-0.5">
-                    Lerne · Orbit · Meistere
-                  </p>
+                  <h1 className="text-xl font-black tracking-tighter text-white leading-none">VokaOrbit</h1>
+                  <p className="text-[9px] font-bold text-white/30 uppercase tracking-[0.18em] mt-0.5">Lerne · Orbit · Meistere</p>
                 </div>
               </div>
             </motion.header>
           )}
         </AnimatePresence>
 
-        {/* ── XP BAR (hidden while learning) ── */}
+        {/* ── XP BAR ── */}
         <AnimatePresence>
           {!isLearning && (
             <motion.div
@@ -133,121 +131,52 @@ export default function App() {
         {/* ── MAIN CONTENT ── */}
         <main className="flex-1">
           <AnimatePresence mode="wait">
-
             {screen === 'manage' && manageDeckId ? (
-              <motion.div key="manage"
-                initial={{ opacity: 0, x: 40 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -40 }}
-                transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
-              >
-                <CardManagementScreen
-                  deckId={manageDeckId}
-                  onBack={goHome}
-                />
+              <motion.div key="manage" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }}>
+                <CardManagementScreen deckId={manageDeckId} onBack={goHome} />
               </motion.div>
-
             ) : screen === 'stats' ? (
-              <motion.div key="stats"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.25 }}
-              >
+              <motion.div key="stats" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
                 <StatsScreen />
               </motion.div>
-
             ) : screen === 'quiz' ? (
-              <motion.div key="quiz"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.25 }}
-              >
+              <motion.div key="quiz" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}>
                 <QuizScreen onClose={goHome} />
               </motion.div>
-
             ) : screen === 'launch' ? (
-              <motion.div key="launch"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.25 }}
-              >
+              <motion.div key="launch" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}>
                 <LaunchScreen onStart={() => setScreen('learn')} />
               </motion.div>
-
             ) : screen === 'learn' ? (
-              <motion.div key="learn"
-                initial={{ opacity: 0, x: 30 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -30 }}
-                transition={{ duration: 0.25 }}
-              >
-                <LearnScreen
-                  deckId={isGlobalReview ? undefined : activeDeckId!}
-                  onBack={goHome}
-                />
+              <motion.div key="learn" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }}>
+                <LearnScreen deckId={isGlobalReview ? undefined : activeDeckId!} onBack={goHome} />
               </motion.div>
-
             ) : (
-              <motion.div key="decks"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={{ duration: 0.25 }}
-              >
-                <DeckScreen
-                  onSelectDeck={startDeck}
-                  onManageCards={(id) => { setManageDeckId(id); setScreen('manage'); }}
-                />
+              <motion.div key="decks" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
+                <DeckScreen onSelectDeck={startDeck} onManageCards={(id) => { setManageDeckId(id); setScreen('manage'); }} />
               </motion.div>
             )}
-
           </AnimatePresence>
         </main>
       </div>
 
-      {/* ── BOTTOM NAV (hidden while learning) ── */}
+      {/* ── BOTTOM NAV ── */}
       <AnimatePresence>
         {!isLearning && (
           <motion.nav
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             className="bottom-nav"
           >
             <div className="flex items-center justify-around w-full max-w-2xl mx-auto px-2 py-2">
-
-              <NavButton
-                icon={<LayoutGrid size={22} />}
-                label="Orbit"
-                active={screen === 'decks'}
-                onClick={goHome}
-              />
+              <NavButton icon={<LayoutGrid size={22} />} label="Orbit" active={screen === 'decks'} onClick={goHome} />
               <NavDivider />
-              <NavButton
-                icon={<Rocket size={22} />}
-                label="Launch"
-                active={screen === 'launch'}
-                onClick={startGlobalReview}
-              />
+              <NavButton icon={<Rocket size={22} />} label="Launch" active={screen === 'launch'} onClick={startGlobalReview} />
               <NavDivider />
-              <NavButton
-                icon={<Brain size={22} />}
-                label="Quiz"
-                active={screen === 'quiz'}
-                onClick={() => setScreen('quiz')}
-              />
+              <NavButton icon={<Brain size={22} />} label="Quiz" active={screen === 'quiz'} onClick={() => setScreen('quiz')} />
               <NavDivider />
-              <NavButton
-                icon={<BarChart3 size={22} />}
-                label="Stats"
-                active={screen === 'stats'}
-                onClick={() => setScreen('stats')}
-              />
-
+              <NavButton icon={<BarChart3 size={22} />} label="Stats" active={screen === 'stats'} onClick={() => setScreen('stats')} />
             </div>
           </motion.nav>
         )}
@@ -256,13 +185,8 @@ export default function App() {
   );
 }
 
-/* ── Small helpers ── */
-function NavButton({ icon, label, active, onClick }: {
-  icon: React.ReactNode;
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
+// ... Helfer-Komponenten NavButton & NavDivider bleiben gleich wie in deinem Code
+function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode; label: string; active: boolean; onClick: () => void; }) {
   return (
     <motion.button
       whileTap={{ scale: 0.85 }}
@@ -271,12 +195,10 @@ function NavButton({ icon, label, active, onClick }: {
         active ? 'text-violet-400' : 'text-white/40 hover:text-white/60'
       }`}
     >
-      {/* Active glow dot */}
       {active && (
         <motion.div
           layoutId="nav-active-dot"
-          className="absolute -top-1 w-5 h-[3px] rounded-full bg-violet-500"
-          style={{ boxShadow: '0 0 10px rgba(124, 58, 237, 0.8), 0 0 20px rgba(124, 58, 237, 0.4)' }}
+          className="absolute -top-1 w-5 h-[3px] rounded-full bg-violet-500 shadow-[0_0_10px_rgba(124,58,237,0.8)]"
           transition={{ type: 'spring', stiffness: 400, damping: 30 }}
         />
       )}
@@ -286,6 +208,4 @@ function NavButton({ icon, label, active, onClick }: {
   );
 }
 
-function NavDivider() {
-  return <div className="w-px h-6 bg-white/8 mx-0.5" />;
-}
+function NavDivider() { return <div className="w-px h-6 bg-white/8 mx-0.5" />; }
