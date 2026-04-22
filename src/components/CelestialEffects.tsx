@@ -11,6 +11,7 @@ type EffectsConfig = {
   shootingStars?: boolean;
   gasGiant?: boolean;
   pulse?: boolean;
+  solarExplosion?: boolean; // ✅ NEU
 };
 
 export const CelestialEffects = ({
@@ -21,20 +22,22 @@ export const CelestialEffects = ({
     shootingStars: true,
     gasGiant: true,
     pulse: true,
+    solarExplosion: true, // ✅ NEU
   },
 }: {
   config?: EffectsConfig;
 }) => {
+
   /* ─────────────────────────────
-     🌌 STARFIELD (stabil, kein rerender jitter)
+     🌌 STARFIELD
   ───────────────────────────── */
   const stars = useMemo(() => {
     return Array.from({ length: 30 }).map(() => {
-      const depth = Math.random(); // Parallax-Level
+      const depth = Math.random();
 
       return {
         x: Math.random() * 100,
-        y: Math.random() * 130 - 10, // wichtig für S23
+        y: Math.random() * 130 - 10,
         size: depth * 2 + 0.5,
         opacity: 0.3 + depth * 0.7,
         duration: 3 + depth * 4,
@@ -50,15 +53,16 @@ export const CelestialEffects = ({
   const [shootingStar, setShootingStar] = useState<any>(null);
   const [gas, setGas] = useState<any>(null);
   const [pulseKey, setPulseKey] = useState(0);
+  const [solarKey, setSolarKey] = useState(0); // ✅ NEU
 
   /* ─────────────────────────────
-     🎯 HELPER: echte Flugbahn
+     🎯 HELPER: Flugbahn
   ───────────────────────────── */
   const createFlightPath = () => {
     const fromLeft = Math.random() > 0.5;
 
     const startY = Math.random() * 120 - 10;
-    const endY = startY + (Math.random() * 40 + 30); // garantiert diagonal
+    const endY = startY + (Math.random() * 40 + 30);
 
     return {
       start: {
@@ -74,39 +78,23 @@ export const CelestialEffects = ({
   };
 
   /* ─────────────────────────────
-     🔁 LOOP SYSTEM
+     🔁 LOOP
   ───────────────────────────── */
   useEffect(() => {
     let running = true;
 
     const loop = async () => {
       while (running) {
-        // ⭐ Shooting Star
         if (config.shootingStars && Math.random() > 0.5) {
-          const path = createFlightPath();
-
-          setShootingStar({
-            id: Date.now(),
-            ...path,
-          });
+          setShootingStar({ id: Date.now(), ...createFlightPath() });
         }
 
-        // ☄️ Komet (selten + majestätisch)
         if (config.comet && Math.random() > 0.8) {
-          const path = createFlightPath();
-
-          setComet({
-            id: Date.now(),
-            ...path,
-          });
+          setComet({ id: Date.now(), ...createFlightPath() });
         }
 
-        // 🪐 Gas Giant
         if (config.gasGiant && Math.random() > 0.94) {
-          setGas({
-            id: Date.now(),
-            y: Math.random() * 60 + 10,
-          });
+          setGas({ id: Date.now(), y: Math.random() * 60 + 10 });
         }
 
         await new Promise((r) => setTimeout(r, 2500));
@@ -126,19 +114,23 @@ export const CelestialEffects = ({
   }, [config]);
 
   /* ─────────────────────────────
-     🚀 COMET SHOWER (extern triggerbar!)
+     🚀 TRIGGERS
   ───────────────────────────── */
+
   const triggerCometShower = (count = 6) => {
     for (let i = 0; i < count; i++) {
       setTimeout(() => {
-        const path = createFlightPath();
-        setComet({ id: Date.now() + i, ...path });
+        setComet({ id: Date.now() + i, ...createFlightPath() });
       }, i * 300);
     }
   };
 
-  // 👉 OPTIONAL: global verfügbar machen
+  const triggerSolarExplosion = () => {
+    setSolarKey((k) => k + 1);
+  };
+
   (window as any).triggerCometShower = triggerCometShower;
+  (window as any).triggerSolarExplosion = triggerSolarExplosion;
 
   /* ─────────────────────────────
      UI
@@ -146,7 +138,7 @@ export const CelestialEffects = ({
   return (
     <div className="fixed inset-0 pointer-events-none overflow-hidden z-[1]">
 
-      {/* ✨ STARS (Parallax!) */}
+      {/* ✨ STARS */}
       {config.stars &&
         stars.map((s, i) => (
           <motion.div
@@ -171,7 +163,7 @@ export const CelestialEffects = ({
           />
         ))}
 
-      {/* 🌌 NEBULA (diagonal drift!) */}
+      {/* 🌌 NEBULA */}
       {config.nebula && (
         <motion.div
           className="absolute w-[160%] h-[80%] -left-1/3 top-1/4 rounded-full blur-[120px]"
@@ -209,7 +201,7 @@ export const CelestialEffects = ({
         )}
       </AnimatePresence>
 
-      {/* ☄️ KOMET (Depth + Blur!) */}
+      {/* ☄️ KOMET */}
       <AnimatePresence>
         {comet && (
           <motion.div
@@ -264,6 +256,68 @@ export const CelestialEffects = ({
               filter: "blur(0.5px)",
             }}
           />
+        )}
+      </AnimatePresence>
+
+      {/* 🌞 SOLAR EXPLOSION */}
+      <AnimatePresence>
+        {config.solarExplosion && (
+          <>
+            {/* CORE */}
+            <motion.div
+              key={solarKey}
+              initial={{
+                scale: 0.05,
+                opacity: 0,
+                filter: "blur(40px)",
+              }}
+              animate={{
+                scale: [0.05, 0.6, 2.8],
+                opacity: [0, 0.7, 0],
+                filter: ["blur(40px)", "blur(6px)", "blur(14px)"],
+              }}
+              transition={{
+                duration: 5,
+                ease: "easeOut",
+              }}
+              className="absolute top-[45%] left-[50%] w-[180px] h-[180px] -translate-x-1/2 -translate-y-1/2 rounded-full"
+              style={{
+                background: `
+                  radial-gradient(circle,
+                    rgba(255,255,255,0.9) 0%,
+                    #06B6D4 25%,
+                    #7C3AED 55%,
+                    transparent 80%
+                  )
+                `,
+              }}
+            />
+
+            {/* SHOCKWAVE */}
+            {[0, 1].map((i) => (
+              <motion.div
+                key={`${solarKey}-wave-${i}`}
+                initial={{ scale: 0.2, opacity: 0.4 }}
+                animate={{
+                  scale: 2.5 + i,
+                  opacity: [0.4, 0],
+                }}
+                transition={{
+                  duration: 4 + i,
+                  delay: i * 0.2,
+                  ease: "easeOut",
+                }}
+                className="absolute rounded-full border border-cyan-400/20"
+                style={{
+                  width: 220,
+                  height: 220,
+                  top: "50%",
+                  left: "50%",
+                  transform: "translate(-50%, -50%)",
+                }}
+              />
+            ))}
+          </>
         )}
       </AnimatePresence>
 
