@@ -10,6 +10,8 @@ import { XPBar, LevelUpOverlay } from './components/XPBar';
 import { Rocket, LayoutGrid, BarChart3, Brain } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
+import { CelestialEffects } from './components/CelestialEffects';
+
 type Screen = 'decks' | 'launch' | 'learn' | 'quiz' | 'stats' | 'manage';
 
 export default function App() {
