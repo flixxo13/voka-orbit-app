@@ -4,14 +4,14 @@ import { motion } from "motion/react";
 export type CelestialMode = 'epic' | 'ambient' | 'active' | 'focus';
 
 /**
- * CelestialEffects — Hintergrund-Sterne mit 3 Verhaltensebenen:
+ * CelestialEffects — 3 Sterne-Verhaltensebenen:
  *
  *  rest    (60%) → quasi-statisch, kaum merklich
- *  breath  (25%) → sanftes Atmen, spürbar dezent
- *  sparkle (15%) → kurzer 4-Punkt-Diamant-Lichtblitz, dann lange Ruhe
+ *  breath  (25%) → spürbares Auf- und Abatmen
+ *  sparkle (15%) → unregelmäßiger Glow-Ring-Puls, dann Pause
  *
- * Gas Giant / Komet / Sternschnuppe / Sonnenexplosion: deaktiviert.
- * testMode: API-kompatibel gehalten, aktuell unused.
+ * Alle Event-Animationen (Gas Giant, Solar, Komet, Sternschnuppe)
+ * sind deaktiviert — nur Sterne aktiv.
  */
 export const CelestialEffects = ({
   mode = 'ambient',
@@ -27,55 +27,54 @@ export const CelestialEffects = ({
     Array.from({ length: starCount }).map((_, i) => {
       const depth = Math.random();
 
-      /* Tier-Zuweisung */
       const tier: 'sparkle' | 'breath' | 'rest' =
-        mode === 'focus'                          ? 'rest'
-        : i < Math.floor(starCount * 0.15)       ? 'sparkle'  // ~4–5 Sterne
-        : i < Math.floor(starCount * 0.40)       ? 'breath'   // ~7–8 Sterne
-        : 'rest';                                              // ~18 Sterne
+        mode === 'focus'                       ? 'rest'
+        : i < Math.floor(starCount * 0.15)    ? 'sparkle'  // ~4–5 Sterne
+        : i < Math.floor(starCount * 0.40)    ? 'breath'   // ~7–8 Sterne
+        : 'rest';                                           // ~18 Sterne
+
+      const size = mode === 'focus'
+        ? depth * 1.8 + 0.4
+        : depth * 3.0 + 0.6;
 
       return {
         x: Math.random() * 96 + 2,
         y: Math.random() * 96 + 2,
-        size: mode === 'focus'
-          ? depth * 1.8 + 0.4
-          : depth * 3.0 + 0.6,
+        size,
 
         baseOpacity:
-          mode === 'focus' ? 0.05 + depth * 0.12
-          : tier === 'sparkle' ? 0.28 + depth * 0.28  // im Ruhezustand eher dezent
+          mode === 'focus'     ? 0.06 + depth * 0.14
+          : tier === 'sparkle' ? 0.30 + depth * 0.30   // dezent im Ruhezustand
           : tier === 'breath'  ? 0.28 + depth * 0.48
-          : 0.22 + depth * 0.52,
+          :                      0.22 + depth * 0.52,
 
-        // Sparkler: kurzer aktiver Zyklus (= der Blitz selbst) + repeatDelay für Ruhepause
+        // Sparkler: kurzer Glow-Puls (1.5–2.5s) + lange Pause danach
         cycleDuration:
-          tier === 'sparkle' ? 2.5 + Math.random() * 1.5  //  2.5–4s  (Blitz-Dauer)
-          : tier === 'breath' ? 5   + Math.random() * 5   //  5–10s   (Atem-Zyklus)
-          :                     8   + Math.random() * 8,  //  8–16s   (Rest-Zyklus)
+          tier === 'sparkle' ? 1.5 + Math.random() * 1.0   // 1.5–2.5s
+          : tier === 'breath' ? 4   + Math.random() * 4    // 4–8s
+          :                     8   + Math.random() * 8,   // 8–16s
 
-        // Maximaler Delay 8s — damit alles innerhalb von Sekunden sichtbar ist
-        delay: Math.random() * 8,
+        // Delay damit Sterne versetzt starten
+        delay: Math.random() * 7,
 
-        // Sparkler: Pause ZWISCHEN den Blitzen (repeatDelay)
-        repeatDelay: tier === 'sparkle' ? 6 + Math.random() * 10 : 0, // 6–16s Pause
+        // Sparkler: unregelmäßige Pause zwischen Glows (gibt Natürlichkeit)
+        repeatDelay: tier === 'sparkle' ? 4 + Math.random() * 11 : 0, // 4–15s
 
-        /* Diamant-Strahl-Länge (halbe Länge — wird in beide Richtungen gespiegelt) */
-        rayHalf: 10 + depth * 14,  // 10–24 px
+        // Glow-Stärke: proportional zur Sterngröße
+        glowR: size * 3.5 + 3,   // z.B. 5–14px äußerer Radius
+        glowS: size * 1.0 + 0.5, // z.B. 1–4px spread
 
         tier,
       };
     }),
   [starCount, mode]);
 
-  /* ─────────────────────────────────────────────────────── */
   return (
     <div className="fixed inset-0 pointer-events-none overflow-hidden z-[1]">
 
       {stars.map((s, i) => {
 
-        /* ══════════════════════════════════════
-           REST — quasi-statisch
-        ══════════════════════════════════════ */
+        /* ── REST: quasi-statisch ── */
         if (s.tier === 'rest') {
           return (
             <motion.div
@@ -88,9 +87,7 @@ export const CelestialEffects = ({
                 top:  `${s.y}%`,
               }}
               animate={{
-                opacity: mode === 'focus'
-                  ? [s.baseOpacity * 0.65, s.baseOpacity, s.baseOpacity * 0.65]
-                  : [s.baseOpacity * 0.85, s.baseOpacity, s.baseOpacity * 0.85],
+                opacity: [s.baseOpacity * 0.82, s.baseOpacity, s.baseOpacity * 0.82],
               }}
               transition={{
                 duration: s.cycleDuration,
@@ -102,9 +99,7 @@ export const CelestialEffects = ({
           );
         }
 
-        /* ══════════════════════════════════════
-           BREATH — sanftes Atmen
-        ══════════════════════════════════════ */
+        /* ── BREATH: spürbares Atmen ── */
         if (s.tier === 'breath') {
           return (
             <motion.div
@@ -118,98 +113,50 @@ export const CelestialEffects = ({
               }}
               animate={{
                 opacity: [
-                  s.baseOpacity * 0.60,
-                  s.baseOpacity,
-                  s.baseOpacity * 1.40,   // heller, aber kein voller Blitz
-                  s.baseOpacity,
-                  s.baseOpacity * 0.60,
+                  s.baseOpacity * 0.45,
+                  s.baseOpacity * 1.55,
+                  s.baseOpacity * 0.45,
                 ],
-                scale: [1, 1, 1.15, 1, 1],
+                scale: [0.88, 1.22, 0.88],
               }}
               transition={{
                 duration: s.cycleDuration,
                 delay:    s.delay,
                 repeat:   Infinity,
-                times:    [0, 0.28, 0.50, 0.72, 1],
                 ease:     'easeInOut',
               }}
             />
           );
         }
 
-        /* ══════════════════════════════════════
-           SPARKLE — 4-Punkt-Diamant-Lichtblitz
-           38% Ruhe → schneller Peak → 50% Ruhe
-        ══════════════════════════════════════ */
-        // Sparkler: times über den kurzen Blitz-Zyklus verteilt
-        // 0→30%: einblenden, 30→60%: peak halten, 60→100%: ausblenden
-        const T = [0, 0.0, 0.30, 0.60, 0.85, 1.0];
-        const transBase = {
-          duration:    s.cycleDuration,
-          delay:       s.delay,
-          repeat:      Infinity,
-          repeatDelay: s.repeatDelay,  // echte Ruhepause zwischen Blitzen
-          times:       T,
-          ease:        'easeInOut' as const,
-        };
+        /* ── SPARKLE: Glow-Ring-Puls, unregelmäßig ── */
+        // boxShadow-Werte: konsistente 2-Layer-Struktur (Framer Motion interpoliert korrekt)
+        const glowOff = `0 0 0px 0px rgba(255,255,255,0.00), 0 0 0px 0px rgba(255,255,255,0.00)`;
+        const glowOn  = `0 0 ${s.glowR}px ${s.glowS}px rgba(255,255,255,0.80), 0 0 ${s.glowR * 2.2}px ${s.glowS * 1.5}px rgba(255,255,255,0.28)`;
 
         return (
-          <div
+          <motion.div
             key={`star-${mode}-${i}`}
-            className="absolute"
-            style={{ left: `${s.x}%`, top: `${s.y}%` }}
-          >
-            {/* Kern-Punkt */}
-            <motion.div
-              className="absolute rounded-full bg-white"
-              style={{
-                width:  s.size,
-                height: s.size,
-                transform: 'translate(-50%,-50%)',
-              }}
-              animate={{
-                opacity: [s.baseOpacity, s.baseOpacity, 1.0,  1.0,  s.baseOpacity, s.baseOpacity],
-                scale:   [1,             1,             1.85, 1.60, 1,             1            ],
-              }}
-              transition={transBase}
-            />
-
-            {/* Horizontaler Strahl */}
-            <motion.div
-              className="absolute"
-              style={{
-                height:       1.5,
-                width:        s.rayHalf * 2,
-                background:   'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.88) 50%, transparent 100%)',
-                borderRadius: 99,
-                transform:    'translate(-50%,-50%)',
-                transformOrigin: 'center',
-              }}
-              animate={{
-                scaleX:  [0, 0, 1,    1,    0, 0],
-                opacity: [0, 0, 0.90, 0.90, 0, 0],
-              }}
-              transition={transBase}
-            />
-
-            {/* Vertikaler Strahl */}
-            <motion.div
-              className="absolute"
-              style={{
-                width:        1.5,
-                height:       s.rayHalf * 2,
-                background:   'linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.88) 50%, transparent 100%)',
-                borderRadius: 99,
-                transform:    'translate(-50%,-50%)',
-                transformOrigin: 'center',
-              }}
-              animate={{
-                scaleY:  [0, 0, 1,    1,    0, 0],
-                opacity: [0, 0, 0.90, 0.90, 0, 0],
-              }}
-              transition={transBase}
-            />
-          </div>
+            className="absolute rounded-full bg-white"
+            style={{
+              width:  s.size,
+              height: s.size,
+              left: `${s.x}%`,
+              top:  `${s.y}%`,
+            }}
+            animate={{
+              opacity:   [s.baseOpacity, 1.0, s.baseOpacity],
+              scale:     [1.0, 1.45, 1.0],
+              boxShadow: [glowOff, glowOn, glowOff],
+            }}
+            transition={{
+              duration:    s.cycleDuration,
+              delay:       s.delay,
+              repeat:      Infinity,
+              repeatDelay: s.repeatDelay,  // unregelmäßige Pause = natürliches Funkeln
+              ease:        'easeInOut',
+            }}
+          />
         );
       })}
 
