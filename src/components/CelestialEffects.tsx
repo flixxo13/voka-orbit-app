@@ -47,13 +47,17 @@ export const CelestialEffects = ({
           : tier === 'breath'  ? 0.28 + depth * 0.48
           : 0.22 + depth * 0.52,
 
-        /* Zyklusdauer: Sparkler haben langen Zyklus → mehr Ruhezeit */
+        // Sparkler: kurzer aktiver Zyklus (= der Blitz selbst) + repeatDelay für Ruhepause
         cycleDuration:
-          tier === 'sparkle' ? 18 + Math.random() * 12   // 18–30s
-          : tier === 'breath' ?  8 + Math.random() * 8   //  8–16s
-          :                     10 + Math.random() * 10, // 10–20s
+          tier === 'sparkle' ? 2.5 + Math.random() * 1.5  //  2.5–4s  (Blitz-Dauer)
+          : tier === 'breath' ? 5   + Math.random() * 5   //  5–10s   (Atem-Zyklus)
+          :                     8   + Math.random() * 8,  //  8–16s   (Rest-Zyklus)
 
-        delay: Math.random() * 22,  // stark gestreut, damit nie synchron
+        // Maximaler Delay 8s — damit alles innerhalb von Sekunden sichtbar ist
+        delay: Math.random() * 8,
+
+        // Sparkler: Pause ZWISCHEN den Blitzen (repeatDelay)
+        repeatDelay: tier === 'sparkle' ? 6 + Math.random() * 10 : 0, // 6–16s Pause
 
         /* Diamant-Strahl-Länge (halbe Länge — wird in beide Richtungen gespiegelt) */
         rayHalf: 10 + depth * 14,  // 10–24 px
@@ -137,13 +141,16 @@ export const CelestialEffects = ({
            SPARKLE — 4-Punkt-Diamant-Lichtblitz
            38% Ruhe → schneller Peak → 50% Ruhe
         ══════════════════════════════════════ */
-        const T = [0, 0.38, 0.44, 0.50, 0.56, 1.0];
+        // Sparkler: times über den kurzen Blitz-Zyklus verteilt
+        // 0→30%: einblenden, 30→60%: peak halten, 60→100%: ausblenden
+        const T = [0, 0.0, 0.30, 0.60, 0.85, 1.0];
         const transBase = {
-          duration: s.cycleDuration,
-          delay:    s.delay,
-          repeat:   Infinity,
-          times:    T,
-          ease:     'easeOut' as const,
+          duration:    s.cycleDuration,
+          delay:       s.delay,
+          repeat:      Infinity,
+          repeatDelay: s.repeatDelay,  // echte Ruhepause zwischen Blitzen
+          times:       T,
+          ease:        'easeInOut' as const,
         };
 
         return (
