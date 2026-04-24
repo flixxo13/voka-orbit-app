@@ -1,0 +1,386 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+
+/* ============================================================
+   VOKAORBIT DESIGN SYSTEM v2.0 – Space Gamification Theme
+   ============================================================ */
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+
+  /* Brand Colors */
+  --color-orbit-purple:  #7C3AED;
+  --color-orbit-indigo:  #4F46E5;
+  --color-orbit-violet:  #A78BFA;
+  --color-orbit-cyan:    #06B6D4;
+  --color-orbit-amber:   #F59E0B;
+  --color-orbit-streak:  #F97316;
+
+  /* Planet Colors */
+  --color-planet-orange: #FB923C;
+  --color-planet-teal:   #2DD4BF;
+  --color-planet-pink:   #EC4899;
+  --color-planet-blue:   #60A5FA;
+  --color-planet-red:    #F87171;
+  --color-planet-lime:   #A3E635;
+
+  /* Radius */
+  --radius-orbit-card: 28px;
+  --radius-orbit-pill: 100px;
+}
+
+/* ============================================================
+   CSS CUSTOM PROPERTIES
+   ============================================================ */
+:root {
+  /* Backgrounds */
+  --bg-deep:      #0A0A2E;
+  --bg-deep-alt:  #080820;
+  --bg-card:      rgba(255, 255, 255, 0.04);
+  --bg-card-hover:rgba(255, 255, 255, 0.07);
+
+  /* Light Mode */
+  --bg-light: linear-gradient(160deg, #C7D9FF 0%, #E8D5FF 100%);
+
+  /* Glows */
+  --glow-purple:  rgba(124, 58, 237, 0.5);
+  --glow-cyan:    rgba(6, 182, 212, 0.4);
+  --glow-amber:   rgba(245, 158, 11, 0.5);
+  --glow-orange:  rgba(251, 146, 60, 0.5);
+  --glow-pink:    rgba(236, 72, 153, 0.4);
+
+  /* Timing */
+  --ease-orbit:   cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-spring:  cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ============================================================
+   BASE RESET & BODY
+   ============================================================ */
+*, *::before, *::after {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  height: 100%;
+  overscroll-behavior: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#root {
+  height: 100%;
+}
+
+/* ============================================================
+   THEME CLASSES
+   ============================================================ */
+.orbit-dark {
+  background-color: var(--bg-deep);
+  color: #FFFFFF;
+  /* Nebel werden als eigene fixed-Ebene in App.tsx gerendert */
+}
+
+.orbit-light {
+  background: var(--bg-light);
+  color: #1E293B;
+}
+
+/* ============================================================
+   SAFE AREA (iPhone Notch + Home Indicator)
+   ============================================================ */
+.safe-top    { padding-top:    env(safe-area-inset-top, 0px); }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+.safe-left   { padding-left:   env(safe-area-inset-left, 0px); }
+.safe-right  { padding-right:  env(safe-area-inset-right, 0px); }
+
+/* ============================================================
+   3D CARD UTILITIES
+   ============================================================ */
+.perspective-1000 { perspective: 1000px; }
+.preserve-3d      { transform-style: preserve-3d; }
+.backface-hidden  {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* ============================================================
+   PLANET GLOW UTILITIES
+   ============================================================ */
+.planet-glow-purple { box-shadow: 0 0 30px 6px var(--glow-purple), 0 0 60px 15px rgba(124,58,237,0.15); }
+.planet-glow-cyan   { box-shadow: 0 0 30px 6px var(--glow-cyan),   0 0 60px 15px rgba(6,182,212,0.15); }
+.planet-glow-amber  { box-shadow: 0 0 30px 6px var(--glow-amber),  0 0 60px 15px rgba(245,158,11,0.15); }
+.planet-glow-orange { box-shadow: 0 0 30px 6px var(--glow-orange), 0 0 60px 15px rgba(251,146,60,0.15); }
+.planet-glow-pink   { box-shadow: 0 0 30px 6px var(--glow-pink),   0 0 60px 15px rgba(236,72,153,0.15); }
+
+/* ============================================================
+   GLASSMORPHISM CARD
+   ============================================================ */
+.glass-card {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 28px;
+}
+
+.glass-card-light {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+}
+
+/* ============================================================
+   ORBIT LETTER TILE (Fill-in-the-blank)
+   ============================================================ */
+.letter-tile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.6rem;
+  height: 3rem;
+  border-radius: 10px;
+  font-size: 1.4rem;
+  font-weight: 800;
+  transition: all 0.3s var(--ease-orbit);
+}
+
+.letter-tile-filled {
+  background: rgba(124, 58, 237, 0.2);
+  border: 1.5px solid rgba(124, 58, 237, 0.6);
+  color: #fff;
+  text-shadow: 0 0 12px rgba(124, 58, 237, 0.8);
+  box-shadow: 0 0 14px rgba(124, 58, 237, 0.3);
+}
+
+.letter-tile-empty {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.15);
+}
+
+.letter-tile-space {
+  width: 0.8rem;
+  border: none;
+  background: transparent;
+}
+
+/* ============================================================
+   ORBIT ORB (Floating Letter Planet)
+   ============================================================ */
+.orbit-orb {
+  position: absolute;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  pointer-events: none;
+  will-change: transform;
+}
+
+/* Shooting star trail */
+.shooting-star::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: inherit;
+  filter: blur(8px);
+  opacity: 0.4;
+  transform: scale(1.5);
+  z-index: -1;
+}
+
+/* ============================================================
+   XP BAR
+   ============================================================ */
+.xp-bar-track {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 100px;
+  overflow: hidden;
+  height: 6px;
+}
+
+.xp-bar-fill {
+  height: 100%;
+  border-radius: 100px;
+  background: linear-gradient(90deg, #F59E0B, #FB923C);
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.6);
+  transition: width 0.6s var(--ease-orbit);
+}
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+
+/* Nebula drift — je Nebel eine eigene Bewegungsrichtung */
+
+/* Violett: von oben-links kommend, driftet diagonal rechts-unten */
+@keyframes nebula-violet {
+  0%   { transform: translate(0px,   0px)   scale(1.00); opacity: 0.75; }
+  25%  { transform: translate(55px,  30px)  scale(1.08); opacity: 1.00; }
+  55%  { transform: translate(80px,  60px)  scale(1.04); opacity: 0.85; }
+  80%  { transform: translate(40px,  85px)  scale(0.97); opacity: 0.95; }
+  100% { transform: translate(0px,   0px)   scale(1.00); opacity: 0.75; }
+}
+
+/* Cyan: von unten-rechts kommend, driftet diagonal links-oben */
+@keyframes nebula-cyan {
+  0%   { transform: translate(0px,   0px)   scale(1.00); opacity: 0.70; }
+  30%  { transform: translate(-60px, -35px) scale(1.10); opacity: 1.00; }
+  60%  { transform: translate(-90px, -65px) scale(1.05); opacity: 0.80; }
+  85%  { transform: translate(-45px, -40px) scale(0.96); opacity: 0.90; }
+  100% { transform: translate(0px,   0px)   scale(1.00); opacity: 0.70; }
+}
+
+/* Pink: von rechts kommend, driftet horizontal links mit leichtem Absinken */
+@keyframes nebula-pink {
+  0%   { transform: translate(0px,   0px)  scale(1.00); opacity: 0.65; }
+  35%  { transform: translate(-50px, 20px) scale(1.07); opacity: 1.00; }
+  65%  { transform: translate(-80px, 45px) scale(1.03); opacity: 0.78; }
+  85%  { transform: translate(-35px, 25px) scale(0.98); opacity: 0.88; }
+  100% { transform: translate(0px,   0px)  scale(1.00); opacity: 0.65; }
+}
+
+/* Gentle float for planets */
+@keyframes planet-float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  33%       { transform: translateY(-8px) rotate(1deg); }
+  66%       { transform: translateY(-4px) rotate(-1deg); }
+}
+.animate-planet-float {
+  animation: planet-float 6s ease-in-out infinite;
+}
+.animate-planet-float-slow {
+  animation: planet-float 9s ease-in-out infinite;
+}
+.animate-planet-float-fast {
+  animation: planet-float 4s ease-in-out infinite;
+}
+
+/* Orbit ring rotation */
+@keyframes orbit-rotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.animate-orbit { animation: orbit-rotate 8s linear infinite; }
+.animate-orbit-slow { animation: orbit-rotate 20s linear infinite; }
+.animate-orbit-reverse { animation: orbit-rotate 12s linear infinite reverse; }
+
+/* Pulse glow */
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50%       { opacity: 1;   transform: scale(1.05); }
+}
+.animate-glow-pulse {
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
+/* Sparkle burst */
+@keyframes sparkle {
+  0%   { opacity: 1; transform: scale(0) rotate(0deg); }
+  50%  { opacity: 1; transform: scale(1.2) rotate(180deg); }
+  100% { opacity: 0; transform: scale(0.8) rotate(360deg); }
+}
+.animate-sparkle {
+  animation: sparkle 0.6s ease-out forwards;
+}
+
+/* Letter fly-in (used for orb → tile) */
+@keyframes letter-fly-in {
+  0%   { opacity: 0; transform: scale(0.3) translateY(20px); }
+  60%  { opacity: 1; transform: scale(1.2) translateY(-4px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+.animate-letter-fly-in {
+  animation: letter-fly-in 0.4s var(--ease-spring) forwards;
+}
+
+/* Card dissolve */
+@keyframes card-dissolve {
+  0%   { opacity: 1; transform: scale(1); filter: blur(0); }
+  50%  { opacity: 0.4; transform: scale(0.97); filter: blur(4px); }
+  100% { opacity: 0; transform: scale(0.9); filter: blur(8px); }
+}
+.animate-dissolve {
+  animation: card-dissolve 0.5s ease-in forwards;
+}
+
+/* XP bar level-up flash */
+@keyframes xp-flash {
+  0%, 100% { box-shadow: 0 0 8px rgba(245, 158, 11, 0.6); }
+  50%       { box-shadow: 0 0 24px rgba(245, 158, 11, 1), 0 0 48px rgba(245, 158, 11, 0.4); }
+}
+.animate-xp-flash {
+  animation: xp-flash 0.5s ease-in-out 3;
+}
+
+/* Shake (wrong answer) */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-8px); }
+  40%       { transform: translateX(8px); }
+  60%       { transform: translateX(-5px); }
+  80%       { transform: translateX(5px); }
+}
+.animate-shake { animation: shake 0.4s ease-in-out; }
+
+/* ============================================================
+   BOTTOM NAV (Full-width bar)
+   ============================================================ */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  width: 100%;
+  pointer-events: auto;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: rgba(10, 10, 46, 0.92);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-top: 1px solid rgba(124, 58, 237, 0.25);
+  box-shadow:
+    0 -4px 20px rgba(124, 58, 237, 0.08),
+    0 -1px 6px rgba(124, 58, 237, 0.12);
+}
+
+/* ============================================================
+   SCROLLBAR (minimal)
+   ============================================================ */
+::-webkit-scrollbar       { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(124, 58, 237, 0.3); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(124, 58, 237, 0.6); }
+
+/* ============================================================
+   SCROLLBAR HIDE
+   ============================================================ */
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+
+/* ============================================================
+   UTILITY: TEXT GLOW
+   ============================================================ */
+.text-glow-purple { text-shadow: 0 0 12px rgba(124, 58, 237, 0.8); }
+.text-glow-cyan   { text-shadow: 0 0 12px rgba(6, 182, 212, 0.8); }
+.text-glow-amber  { text-shadow: 0 0 12px rgba(245, 158, 11, 0.8); }
