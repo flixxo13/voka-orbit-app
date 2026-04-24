@@ -17,9 +17,10 @@ function bezierPt(t: number, x0: number, y0: number, cx: number, cy: number, x1:
 }
 
 type ShootingStarState = {
-  startX: number;  // % Bildschirmbreite
-  startY: number;  // % Bildschirmhöhe
+  startX: number;   // % Bildschirmbreite
+  startY: number;   // % Bildschirmhöhe
   fromRight: boolean;
+  speed: 'slow' | 'medium' | 'fast';
   key: number;
 };
 
@@ -48,8 +49,9 @@ function ShootingStar({ s }: { s: ShootingStarState }) {
   );
 
   const uid  = s.key;
-  const T    = 0.85; // schnell — natürlich wirkende Geschwindigkeit
-  const tail = 18;   // Schweiflänge in viewBox-Einheiten
+  // 3 Geschwindigkeiten: slow=atmosphärisch, medium=standard, fast=blitz
+  const T    = s.speed === 'fast' ? 0.55 : s.speed === 'slow' ? 1.3 : 0.85;
+  const tail = s.speed === 'fast' ? 14 : s.speed === 'slow' ? 22 : 18;
 
   return (
     <motion.svg
@@ -58,22 +60,22 @@ function ShootingStar({ s }: { s: ShootingStarState }) {
       style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', overflow: 'visible' }}
     >
       <defs>
-        {/* Gradient: bright am Kopf (x2=0), transparent am Schweifende (x1=-tail) */}
+        {/* Gradient: nahtlos von transparent (Schweifende) → kühles Weiß (Kopf) */}
         <linearGradient id={`tg-${uid}`} gradientUnits="userSpaceOnUse"
           x1={-tail} y1={0} x2={0} y2={0}>
-          <stop offset="0%"   stopColor="rgba(6,210,230,0)"    />
-          <stop offset="40%"  stopColor="rgba(6,210,230,0.12)" />
-          <stop offset="78%"  stopColor="rgba(80,235,255,0.60)"/>
-          <stop offset="100%" stopColor="rgba(220,250,255,0.95)"/>
+          <stop offset="0%"   stopColor="rgba(255,255,255,0)"    />
+          <stop offset="45%"  stopColor="rgba(200,220,255,0.10)" />
+          <stop offset="80%"  stopColor="rgba(220,235,255,0.55)"/>
+          <stop offset="100%" stopColor="rgba(245,250,255,0.92)"/>
         </linearGradient>
-        {/* Glow-Filter für den Kopf */}
-        <filter id={`hf-${uid}`} x="-400%" y="-400%" width="900%" height="900%">
-          <feGaussianBlur stdDeviation="0.9" result="b"/>
+        {/* Subtiler Glow: nur minimales Aufleuchten am Kopf */}
+        <filter id={`hf-${uid}`} x="-500%" y="-500%" width="1100%" height="1100%">
+          <feGaussianBlur stdDeviation="0.5" result="b"/>
           <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
         </filter>
-        {/* Weicher Blur-Layer für Schweif-Tapering */}
+        {/* Weicher Blur für Schweif-Tapering */}
         <filter id={`tf-${uid}`} x="-20%" y="-400%" width="140%" height="900%">
-          <feGaussianBlur stdDeviation="0.35"/>
+          <feGaussianBlur stdDeviation="0.28"/>
         </filter>
       </defs>
 
@@ -104,10 +106,9 @@ function ShootingStar({ s }: { s: ShootingStarState }) {
             strokeLinecap="round"
           />
 
-          {/* Kopf: immer an Position 0,0 (Spitze der Bewegung) */}
+          {/* Kopf: winziger Lichtpunkt, nahtlos ins Schweifende übergehend */}
           <g filter={`url(#hf-${uid})`}>
-            <circle r={1.4} fill="rgba(6,220,240,0.45)" />
-            <circle r={0.65} fill="white" />
+            <circle r={0.28} fill="rgba(245,250,255,0.95)" />
           </g>
 
         </g>
@@ -200,28 +201,33 @@ export const CelestialEffects = ({
     let running = true;
 
     const cycle = async () => {
-      // Erste Erscheinung: 3–7s nach Laden (schnell sichtbar zum Testen)
-      await new Promise(r => setTimeout(r, 3000 + Math.random() * 4000));
+      // Erste Erscheinung: 1–3s nach Laden (schnell sichtbar)
+      await new Promise(r => setTimeout(r, 1000 + Math.random() * 2000));
       while (running) {
         const fromRight = Math.random() > 0.5;
 
-        // Startpunkt: oberes Viertel des Screens, innerhalb des sichtbaren Bereichs
-        // fromRight: startet rechts (60–82%), fromLeft: startet links (18–40%)
+        // 3 Geschwindigkeiten zufällig gewählt (fast häufiger als slow)
+        const speedRoll = Math.random();
+        const speed: ShootingStarState['speed'] =
+          speedRoll < 0.35 ? 'fast' : speedRoll < 0.70 ? 'medium' : 'slow';
+
+        // Animationsdauer je nach Geschwindigkeit + kleiner Puffer
+        const animDuration = speed === 'fast' ? 700 : speed === 'slow' ? 1500 : 1000;
+
         const startX = fromRight
-          ? 60 + Math.random() * 22  // 60–82%
-          : 18 + Math.random() * 22; // 18–40%
-        const startY = 4 + Math.random() * 22; // 4–26% vom oberen Rand
+          ? 62 + Math.random() * 20  // 62–82% von links
+          : 18 + Math.random() * 20; // 18–38%
+        const startY = 3 + Math.random() * 20; // 3–23% vom oberen Rand
 
         shootingStarKey.current += 1;
-        setShootingStar({ startX, startY, fromRight, key: shootingStarKey.current });
+        setShootingStar({ startX, startY, fromRight, speed, key: shootingStarKey.current });
 
-        // Sichtbar für ~2.2s (Animation-Dauer)
-        await new Promise(r => setTimeout(r, 2400));
+        await new Promise(r => setTimeout(r, animDuration));
         if (!running) break;
         setShootingStar(null);
 
-        // Pause bis zur nächsten: 20–40 Sekunden
-        await new Promise(r => setTimeout(r, 20000 + Math.random() * 20000));
+        // Pause zwischen Events: 8–18 Sekunden
+        await new Promise(r => setTimeout(r, 8000 + Math.random() * 10000));
       }
     };
 
