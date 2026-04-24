@@ -3,80 +3,121 @@ import { motion, AnimatePresence } from "motion/react";
 
 export type CelestialMode = 'epic' | 'ambient' | 'active' | 'focus';
 
-// ─── Sternschnuppe ───────────────────────────────────────────────────────────
-// Basiert auf Bildanalyse: Kern weiß+Cyan-Glow, Schweif 45–50° diagonal,
-// ca. 15× so lang wie Kern breit, Linear-Gradient cyan-weiß → transparent.
-// Seltenes Event: nur im ambient-Modus, alle 25–50 Sekunden einmal.
+// ─── Sternschnuppe (SVG Path Tracer) ─────────────────────────────────────────
+// Löst alle 4 KI-Sternschnuppen-Probleme:
+// 1. Kein Besenstiel: Schweif wird über pathLength progressiv AUFGEDECKT
+// 2. Kein linearer Pfad: Quadratische Bezier-Kurve = natürlicher Bogen
+// 3. Tapering: Gradient (Opacity) + Blur-Layer (Breite) simulieren Verjüngung
+// 4. Physik-Timing: easeIn-Kurve = Meteor beschleunigt beim Eintauchen
+
+// Quadratic Bezier: Punkt bei Parameter t (0→1)
+function bezierPt(t: number, x0: number, y0: number, cx: number, cy: number, x1: number, y1: number): [number, number] {
+  const mt = 1 - t;
+  return [mt*mt*x0 + 2*mt*t*cx + t*t*x1, mt*mt*y0 + 2*mt*t*cy + t*t*y1];
+}
 
 type ShootingStarState = {
-  startX: number; // % vom linken Rand
-  startY: number; // % vom oberen Rand
+  startX: number;  // % Bildschirmbreite
+  startY: number;  // % Bildschirmhöhe
+  fromRight: boolean;
   key: number;
 };
 
 function ShootingStar({ s }: { s: ShootingStarState }) {
-  // Schweif-Länge & Kern-Größe (natürliche Proportionen aus dem Bild)
-  const tailLength = 220; // px — entspricht ~15× Kernbreite
-  const coreSize   = 6;   // px — leuchtender Kern
-  const angle      = 47;  // Grad — Winkel wie im Referenzbild (oben-rechts → unten-links)
+  // Referenz-Koordinatenraum: 100×177 (Hochformat-Handy, ~9:16)
+  // startX/Y sind bereits in 0-100, Y-Achse auf 177 skalieren
+  const sx = s.startX;
+  const sy = s.startY * 1.77;
 
-  // Gesamtdauer: 0.3s Fade-in, 1.4s Zug, 0.4s Fade-out
-  const duration = 2.1;
+  // Reisevektor (in Referenz-Einheiten)
+  const dx = s.fromRight ? -48 : 48;
+  const dy = 30;
+  const ex = sx + dx;
+  const ey = sy + dy;
+
+  // Bezier-Kontrollpunkt: leichter Bogen (Atmosphäreneintritt-Kurve)
+  // Der Meteor "flacht" am Anfang ab, dann steilt er sich ein — natürliche Parabel
+  const ctrlX = sx + dx * 0.28;
+  const ctrlY = sy + dy * 0.18 - 5;
+
+  // Kopf-Keyframes entlang der Bezier (für akkurates Path-Following)
+  const [h0, h1, h2, h3, h4] = [0, 0.25, 0.55, 0.82, 1.0].map(
+    t => bezierPt(t, sx, sy, ctrlX, ctrlY, ex, ey)
+  );
+
+  const uid = s.key;
+  const d   = `M ${sx} ${sy} Q ${ctrlX} ${ctrlY} ${ex} ${ey}`;
+
+  // Timing-Kurve: langsam einsteigen, beschleunigen, kurz aufglühen, verpuffen
+  // Phase: [Eintritt] [Aufglühen] [Zug]   [Verblassen]
+  const T    = 2.6;
+  const KF   = [0, 0.10, 0.70, 1.0] as const;
 
   return (
-    <motion.div
-      key={s.key}
-      style={{
-        position: 'absolute',
-        left: `${s.startX}%`,
-        top:  `${s.startY}%`,
-        // Rotation so dass Schweif von oben-rechts nach unten-links zieht
-        transform: `rotate(${angle}deg)`,
-        transformOrigin: 'left center',
-        display: 'flex',
-        alignItems: 'center',
-        pointerEvents: 'none',
-      }}
-      initial={{ opacity: 0, x: 0 }}
-      animate={{
-        opacity: [0, 1, 1, 0],
-        // bewegt sich entlang der Schweifachse
-        x: [0, tailLength * 0.5, tailLength * 1.1, tailLength * 1.4],
-      }}
+    <motion.svg
+      viewBox="0 0 100 177"
+      preserveAspectRatio="xMidYMid slice"
+      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', overflow: 'visible' }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: [0, 1, 1, 0] }}
       exit={{ opacity: 0 }}
-      transition={{
-        duration,
-        times: [0, 0.18, 0.75, 1],
-        ease: 'easeIn',
-      }}
+      transition={{ duration: T, times: [...KF] }}
     >
-      {/* Schweif — Linear-Gradient: transparent links → cyan-weiß rechts (Kern-Ende) */}
-      <div style={{
-        width:  tailLength,
-        height: 2,
-        background: 'linear-gradient(90deg, transparent 0%, rgba(6,210,230,0.10) 35%, rgba(6,210,230,0.55) 70%, rgba(200,245,255,0.90) 92%, rgba(255,255,255,0.98) 100%)',
-        borderRadius: 2,
-        // Weiche Kante nach oben/unten (Schweif ist nicht hart-geschnitten)
-        boxShadow: '0 0 4px 1px rgba(6,210,230,0.18)',
-        flexShrink: 0,
-      }} />
+      <defs>
+        {/* Gradient: Schweifende (transparent) → Kopf (weiß) */}
+        <linearGradient id={`sg-${uid}`} gradientUnits="userSpaceOnUse"
+          x1={sx} y1={sy} x2={ex} y2={ey}>
+          <stop offset="0%"   stopColor="rgba(6,210,230,0)"    />
+          <stop offset="30%"  stopColor="rgba(6,210,230,0.08)" />
+          <stop offset="70%"  stopColor="rgba(80,235,255,0.55)"/>
+          <stop offset="92%"  stopColor="rgba(210,250,255,0.88)"/>
+          <stop offset="100%" stopColor="rgba(255,255,255,0.97)"/>
+        </linearGradient>
+        {/* Weicher Blur für den Glow-Layer (erzeugt Breiten-Tapering visuell) */}
+        <filter id={`blur-${uid}`} x="-50%" y="-300%" width="200%" height="700%">
+          <feGaussianBlur stdDeviation="0.6"/>
+        </filter>
+        {/* Starker Glow für den Kopf */}
+        <filter id={`head-${uid}`} x="-300%" y="-300%" width="700%" height="700%">
+          <feGaussianBlur stdDeviation="1.2" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
 
-      {/* Kern — weißer Punkt mit Cyan-Glow */}
-      <div style={{
-        width:  coreSize,
-        height: coreSize,
-        borderRadius: '50%',
-        background: '#FFFFFF',
-        flexShrink: 0,
-        boxShadow: [
-          `0 0 ${coreSize * 1.2}px ${coreSize * 0.5}px rgba(255,255,255,0.95)`,
-          `0 0 ${coreSize * 3.0}px ${coreSize * 1.2}px rgba(6,210,230,0.80)`,
-          `0 0 ${coreSize * 6.0}px ${coreSize * 2.0}px rgba(6,210,230,0.30)`,
-        ].join(', '),
-      }} />
-    </motion.div>
+      {/* Layer 1: Glow-Schweif (breit + weich = Tapering-Illusion) */}
+      <motion.path d={d} fill="none"
+        stroke={`url(#sg-${uid})`} strokeWidth={1.4} strokeLinecap="round"
+        filter={`url(#blur-${uid})`}
+        initial={{ pathLength: 0, opacity: 0 }}
+        animate={{ pathLength: [0, 0, 1, 1], opacity: [0, 0.7, 0.7, 0] }}
+        transition={{ duration: T, times: [...KF], ease: [0.2, 0, 0.6, 1] }}
+      />
+
+      {/* Layer 2: Kern-Schweif (dünn + scharf) */}
+      <motion.path d={d} fill="none"
+        stroke={`url(#sg-${uid})`} strokeWidth={0.35} strokeLinecap="round"
+        initial={{ pathLength: 0, opacity: 0 }}
+        animate={{ pathLength: [0, 0, 1, 1], opacity: [0, 1, 1, 0] }}
+        transition={{ duration: T, times: [...KF], ease: [0.2, 0, 0.6, 1] }}
+      />
+
+      {/* Layer 3: Meteor-Kopf folgt der Bezier-Kurve (kein Besenstiel) */}
+      <motion.g filter={`url(#head-${uid})`}
+        animate={{
+          x: [h0[0], h1[0], h2[0], h3[0], h4[0]],
+          y: [h0[1], h1[1], h2[1], h3[1], h4[1]],
+          opacity: [0, 1, 1, 0.4, 0],
+        }}
+        transition={{ duration: T, times: [0, 0.10, 0.55, 0.85, 1.0], ease: [0.25, 0, 0.75, 1] }}
+      >
+        <circle r={1.5} fill="rgba(6,220,240,0.5)" />
+        <circle r={0.7} fill="white" />
+      </motion.g>
+
+    </motion.svg>
   );
 }
+
 
 // ─── Hauptkomponente ──────────────────────────────────────────────────────────
 
@@ -160,23 +201,28 @@ export const CelestialEffects = ({
     let running = true;
 
     const cycle = async () => {
-      // Erste Erscheinung: 8–18s nach Laden (nicht sofort)
-      await new Promise(r => setTimeout(r, 8000 + Math.random() * 10000));
+      // Erste Erscheinung: 3–7s nach Laden (schnell sichtbar zum Testen)
+      await new Promise(r => setTimeout(r, 3000 + Math.random() * 4000));
       while (running) {
-        // Startpunkt: oberes Drittel des Screens, von rechts kommend
-        // Startpunkt leicht außerhalb des rechten Rands, um von dort reinzuziehen
-        const startX = 55 + Math.random() * 35; // 55–90% von links
-        const startY = 5  + Math.random() * 28; // 5–33% von oben
-        shootingStarKey.current += 1;
-        setShootingStar({ startX, startY, key: shootingStarKey.current });
+        const fromRight = Math.random() > 0.5;
 
-        // Sternschnuppe sichtbar für ~2.1s (Animation-Dauer)
-        await new Promise(r => setTimeout(r, 2200));
+        // Startpunkt: oberes Viertel des Screens, innerhalb des sichtbaren Bereichs
+        // fromRight: startet rechts (60–82%), fromLeft: startet links (18–40%)
+        const startX = fromRight
+          ? 60 + Math.random() * 22  // 60–82%
+          : 18 + Math.random() * 22; // 18–40%
+        const startY = 4 + Math.random() * 22; // 4–26% vom oberen Rand
+
+        shootingStarKey.current += 1;
+        setShootingStar({ startX, startY, fromRight, key: shootingStarKey.current });
+
+        // Sichtbar für ~2.2s (Animation-Dauer)
+        await new Promise(r => setTimeout(r, 2400));
         if (!running) break;
         setShootingStar(null);
 
-        // Pause bis zur nächsten: 25–50 Sekunden
-        await new Promise(r => setTimeout(r, 25000 + Math.random() * 25000));
+        // Pause bis zur nächsten: 20–40 Sekunden
+        await new Promise(r => setTimeout(r, 20000 + Math.random() * 20000));
       }
     };
 
