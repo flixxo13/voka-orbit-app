@@ -79,34 +79,41 @@ function ShootingStar({ s }: { s: ShootingStarState }) {
         </filter>
       </defs>
 
-      {/* Bewegte Gruppe: Schweif + Kopf fliegen zusammen, Kopf immer vorne */}
+      {/* Bewegte Gruppe: konstante lineare Geschwindigkeit (kein Easing-Ruckeln) */}
       <motion.g
         animate={{
-          x: [pts[0][0], pts[1][0], pts[2][0], pts[3][0]],
-          y: [pts[0][1], pts[1][1], pts[2][1], pts[3][1]],
+          x:       [pts[0][0], pts[1][0], pts[2][0], pts[3][0]],
+          y:       [pts[0][1], pts[1][1], pts[2][1], pts[3][1]],
           opacity: [0, 1, 1, 0],
         }}
         transition={{
           duration: T,
-          times: [0, 0.12, 0.78, 1.0],
-          ease: [0.3, 0, 0.85, 1], // langsam einsteigen, beschleunigen
+          // x & y: linear → konstante Geschwindigkeit, kein Ruckeln
+          x:       { ease: 'linear', times: [0, 0.28, 0.62, 1.0] },
+          y:       { ease: 'linear', times: [0, 0.28, 0.62, 1.0] },
+          // opacity: eigene sanfte Kurve unabhängig von Position
+          opacity: { ease: 'easeInOut', times: [0, 0.08, 0.88, 1.0] },
         }}
       >
         {/* Innere Gruppe: rotiert so dass Schweif hinter Kopf zeigt */}
         <g transform={`rotate(${travelAngle})`}>
 
-          {/* Schweif Glow-Layer (breit + weich → Tapering-Illusion) */}
-          <line x1={-tail} y1={0} x2={0} y2={0}
+          {/* Schweif Glow-Layer: löst sich während des Fluges auf (Dissipation) */}
+          <motion.line x1={-tail} y1={0} x2={0} y2={0}
             stroke={`url(#tg-${uid})`} strokeWidth={1.2}
-            strokeLinecap="round" filter={`url(#tf-${uid})`} opacity={0.8}
+            strokeLinecap="round" filter={`url(#tf-${uid})`}
+            animate={{ opacity: [0.85, 0.85, 0.2, 0] }}
+            transition={{ duration: T, times: [0, 0.18, 0.75, 1.0], ease: 'easeIn' }}
           />
-          {/* Schweif Kern-Layer (dünn + scharf) */}
-          <line x1={-tail} y1={0} x2={0} y2={0}
+          {/* Schweif Kern-Layer: verblasst sanfter (Nachleuchten) */}
+          <motion.line x1={-tail} y1={0} x2={0} y2={0}
             stroke={`url(#tg-${uid})`} strokeWidth={0.3}
             strokeLinecap="round"
+            animate={{ opacity: [1, 1, 0.35, 0.08] }}
+            transition={{ duration: T, times: [0, 0.20, 0.78, 1.0], ease: 'easeIn' }}
           />
 
-          {/* Kopf: winziger Lichtpunkt, nahtlos ins Schweifende übergehend */}
+          {/* Kopf: bleibt stabil hell bis zum globalen Fade-Out */}
           <g filter={`url(#hf-${uid})`}>
             <circle r={0.28} fill="rgba(245,250,255,0.95)" />
           </g>
