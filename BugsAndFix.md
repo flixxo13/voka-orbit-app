@@ -11,3 +11,5 @@
 - beim hochladen dea Backups , ersetzen und neu funktioniert. Bei zusammenführen entstehen mehr als Daten als geplant
 
 - Maximallänge von Vokabeln und Beispielsätzen
+
+- Hint XP: Fehler XP soll genauso viel abziehen wie XP für den richtigen Buchstaben, 
