@@ -15,3 +15,5 @@
 - Hint XP: Fehler XP soll genauso viel abziehen wie XP für den richtigen Buchstaben, 
 
 - bei Vokabeln mit mehr als einem Wort den Hint dafür optimieren
+
+- Decks ein und ausschalten Funktion fixen
