@@ -17,3 +17,5 @@
 - bei Vokabeln mit mehr als einem Wort den Hint dafür optimieren
 
 - Decks ein und ausschalten Funktion fixen
+
+- beim Deck ein und auschalten ändert sich wie gewünscht die gelernt anzahl oben im Header. die Gelernt Anzahl kann untetschiedlich sein, prüfen. 
