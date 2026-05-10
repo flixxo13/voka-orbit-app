@@ -19,3 +19,5 @@
 - Decks ein und ausschalten Funktion fixen
 
 - beim Deck ein und auschalten ändert sich wie gewünscht die gelernt anzahl oben im Header. die Gelernt Anzahl kann untetschiedlich sein, prüfen. 
+
+- im Menu runtergescrollt, dann auf Launch oder Quiz gewechselt , Menu bleibt unten statt oben
