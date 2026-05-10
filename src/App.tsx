@@ -171,7 +171,6 @@ export default function App() {
               </div>
             </motion.header>
           )}
-        </AnimatePresence>         )}
         </AnimatePresence>
 
         {/* Main Content Area */}
