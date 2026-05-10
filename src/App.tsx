@@ -63,7 +63,8 @@ export default function App() {
     requireProfile(() => {
       setActiveDeckId(null);
       setIsGlobalReview(true);
-      setScreen('launch');
+      // setScreen('launch'); // Auskommentiert, um direkt zum Lernen zu springen
+      setScreen('learn');
     });
   };
 
@@ -101,7 +102,7 @@ export default function App() {
       <div className="max-w-2xl mx-auto px-4 pt-4 pb-28 relative z-10 min-h-screen flex flex-col safe-top">
         {/* Compact Orbit Header */}
         <AnimatePresence>
-          {!isLearning && (
+          {!isLearning && screen !== 'quiz' && (
             <motion.header
               initial={{ opacity: 0, y: -16 }}
               animate={{ opacity: 1, y: 0 }}
