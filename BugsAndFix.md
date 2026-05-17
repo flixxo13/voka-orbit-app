@@ -27,3 +27,5 @@
 - XP anzeigen über Header
 
 - bei Klick auf Profil und scrollen nach unten und zurück , wird der Screen wie eingefroren
+
+- Länge von Streak (20) nach Markt ünerprüfen, Streak vollständig, Bonus, was wenn man nach paar Vokabeln zurückgeht, wird SRS trotzdem pro Vokabel gespeichert ? 
