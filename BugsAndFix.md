@@ -23,3 +23,5 @@
 - im Menu runtergescrollt, dann auf Launch oder Quiz gewechselt , Menu bleibt unten statt oben
 
 - Text und Logo der 4 Optionen für den Lernalgorythmus optimieren, 
+
+- XP anzeigen über Header
