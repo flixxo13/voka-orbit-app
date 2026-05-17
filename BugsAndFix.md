@@ -28,6 +28,7 @@
 
 - bei Klick auf Profil und scrollen nach unten und zurück , wird der Screen wie eingefroren
 
-- Länge von Streak (20) nach Markt ünerprüfen, Streak vollständig, Bonus, was wenn man nach paar Vokabeln zurückgeht, wird SRS trotzdem pro Vokabel gespeichert ? 
+- Länge von Streak (20) nach Markt ünerprüfen, Streak vollständig, Bonus, was wenn man nach paar Vokabeln zurückgeht, wird SRS trotzdem pro Vokabel gespeichert ? Die letzten falschen Volabeln sollen nicht sofort zu Beginn bei Neustart erscheinen. 
 
 - Beispielsätze auf Deutsch gegen Englisch tauschen und das Zielwort einfach ausblenden , prüfen nach Markt
+
