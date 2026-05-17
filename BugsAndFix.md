@@ -25,3 +25,5 @@
 - Text und Logo der 4 Optionen für den Lernalgorythmus optimieren, 
 
 - XP anzeigen über Header
+
+- bei Klick auf Profil und scrollen nach unten und zurück , wird der Screen wie eingefroren
