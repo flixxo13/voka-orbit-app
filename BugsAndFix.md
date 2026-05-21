@@ -32,3 +32,5 @@
 
 - Beispielsätze auf Deutsch gegen Englisch tauschen und das Zielwort einfach ausblenden , prüfen nach Markt
 
+- Glassmorphism Bereiche darauf prüfen , ob sie den Hintergrund durchlassen oder nicht und prüfen wie es sein soll
+
