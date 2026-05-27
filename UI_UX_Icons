@@ -1,0 +1,782 @@
+Gemini
+
+Diese Screemshots zeigen weiterhin das Design System: VokaOrbit Design System
+Version: 2.0
+Status: Living Document
+Zuletzt aktualisiert: 2026-05-01
+Verantwortlich: Felix (Product) + Antigravity AI (Engineering)
+
+1. Philosophie & Designsprache
+1.1 Leitprinzip: „Physikalischer Surrealismus"
+VokaOrbit nutzt eine Designphilosophie die wir intern als „Physikalischer Surrealismus" bezeichnen. Das bedeutet:
+
+Elemente verhalten sich wie Objekte mit Masse, Schwerkraft und Trägheit
+Animationen folgen physikalischen Gesetzen (Federkraft, Orbit, Gravitation)
+Die Umgebung ist surreal (Weltraum, Schwarze Löcher, Planeten), fühlt sich aber durch konsistente Physik real an
+Gamification ist eingebettet, nicht aufgesetzt
+Analogie: Ein Planetensystem ist physikalisch präzise – aber es ist trotzdem fremdartig schön. VokaOrbit soll sich genauso anfühlen.
+
+1.2 Design-Ziele (Priorisiert)
+Priorität	Ziel	Beschreibung
+1	Fokus fördern	UI lenkt nie vom Lernen ab – alles dient dem Lernfluss
+2	Belohnung spürbar machen	Fortschritt wird sichtbar, hörbar, fühlbar (Haptik)
+3	Atmosphäre schaffen	Weltraum-Ambiente erzeugt Immersion ohne Ablenkung
+4	Premium wirken	Jede Interaktion fühlt sich wertig an
+1.3 Emotional Zoning (Kontext-bewusste Atmosphäre)
+VokaOrbit definiert 4 emotionale Zonen mit bewusst unterschiedlicher visueller Energie:
+
+┌─────────────────────────────────────────────────────────────────┐
+│  ZONE         │ ENERGIE      │ VISUELLER STIL         │ STERNE  │
+├─────────────────────────────────────────────────────────────────┤
+│ 🏠 Dashboard  │ Ruhig        │ Ambient, Glassmorphism │ Funkeln │
+│ 🎮 Hint-Mode  │ Fokus        │ Weich, diffus, tief    │ Statisch│
+│ 🚀 Launch     │ Energie      │ Volle Visuell-Power    │ Aktiv   │
+│ ✅ Abschluss  │ Triumph      │ Particles, Glow-Burst  │ Explosion│
+└─────────────────────────────────────────────────────────────────┘
+Design-Entscheidung (2026-05-01): Hint-System-Sterne bleiben bewusst weich und statisch (diffuse radial-gradient Punkte). Dashboard-Sterne haben scharfe 4-Punkt-Diamant-Funkeln. Dies ist kein Fehler, es ist „Emotional Zoning" – die Stimmung passt sich dem Kontext an.
+Die globale Design Language (Farben, Typografie, Spacing, Cards) bleibt in allen Zonen identisch.
+
+2. Design Tokens
+2.1 Farb-System
+Brand Colors (Primärpalette)
+--color-orbit-purple:  #7C3AED;   /* Primärfarbe – Zustände, UI, Ringe */
+--color-orbit-indigo:  #4F46E5;   /* Hover/Active-Variante von Purple */
+--color-orbit-violet:  #A78BFA;   /* Helle Akzent-Variante */
+--color-orbit-cyan:    #06B6D4;   /* Sekundärfarbe – Ringe, Highlights */
+--color-orbit-amber:   #F59E0B;   /* XP, Gold, Combo-Belohnung */
+--color-orbit-streak:  #F97316;   /* Streak/Feuer-Indicator */
+Semantisches 3-Farben-System (Gamification)
+WICHTIG: Dieses System ist verbindlich für alle Feedback-Elemente im Hint-System.
+
+Farbe	Hex	Semantik	Verwendung
+🩷 Pink	#EC4899	Fehler / Error	Falsche Buchstaben, Error-Glow, Fehler-Slots
+🟣 Purple	#7C3AED	Neutral / Zustand	Aktive Slots, Ring-UI, Reveal-State
+🥇 Gold	#F59E0B	Combo / Erfolg	Streak-Bonus, XP-Toast, Black-Hole-Dots
+Hintergrund-Palette
+--bg-deep:      #0A0A2E;   /* Haupt-Hintergrund (Dark Mode) */
+--bg-deep-alt:  #080820;   /* Alternativer tiefer Hintergrund */
+--bg-card:      rgba(255, 255, 255, 0.04);  /* Glass Card Standard */
+--bg-card-hover:rgba(255, 255, 255, 0.07);  /* Glass Card Hover */
+Planet Colors
+--color-planet-orange: #FB923C;
+--color-planet-teal:   #2DD4BF;
+--color-planet-pink:   #EC4899;
+--color-planet-blue:   #60A5FA;
+--color-planet-red:    #F87171;
+--color-planet-lime:   #A3E635;
+Glow Values
+--glow-purple:  rgba(124, 58, 237, 0.5);
+--glow-cyan:    rgba(6, 182, 212, 0.4);
+--glow-amber:   rgba(245, 158, 11, 0.5);
+--glow-orange:  rgba(251, 146, 60, 0.5);
+--glow-pink:    rgba(236, 72, 153, 0.4);
+2.2 Typografie
+Font Family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif
+Source:      Google Fonts (geladen via @import)
+Gewicht	Token	Verwendung
+300	Light	Subtexte, Metadaten
+400	Regular	Fließtext
+500	Medium	Labels
+600	SemiBold	UI-Text
+700	Bold	Primäre Buttons
+800	ExtraBold	Headlines, Scores
+Typografische Skalierung (Tailwind-Klassen):
+
+text-[9px] – Micro-Labels (XP-Kosten, Tracking-Infos)
+text-xs – Caption, Buttons
+text-sm – Body, Beschreibungen
+text-base – Standard-Text
+text-xl – Subheadlines
+text-3xl – Primäre Vokabel-Anzeige
+font-black – Alle Primär-Labels (Uppercase + Tracking)
+2.3 Spacing & Radii
+--radius-orbit-card: 28px;   /* Haupt-Cards */
+--radius-orbit-pill: 100px;  /* Buttons, Tags */
+Spacing Scale: Tailwind-Standard (4px base) – bevorzugte Abstände: gap-1.5, gap-3, gap-4, px-4, py-2.5
+
+2.4 Easing Curves
+--ease-orbit:   cubic-bezier(0.23, 1, 0.32, 1);    /* Smooth deceleration */
+--ease-spring:  cubic-bezier(0.34, 1.56, 0.64, 1); /* Overshoot/bounce */
+Curve	Verwendung
+ease-orbit	Card-Transitions, Fly-in Animationen
+ease-spring	Letter Fly-in, Planet-Tap Feedback
+linear	Orbit-Rotation (kontinuierliche Schleifen)
+easeInOut	Pendel-Bewegungen (Sway, Tilt)
+3. Komponenten-Bibliothek
+3.1 Glass Card
+.glass-card {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 28px;
+}
+Regeln:
+
+Immer backdrop-filter: blur(20px) – kein blur = kein Glassmorphism
+Border-Opacity max. 0.12 – sonst zu dominant
+Kein box-shadow auf Glass Cards (flacht das Glassgefühl ab)
+3.2 Planet Vibe (Buchstaben-Planeten)
+Anatomie:
+
+PlanetVibe
+├── .planet-halo         – Atmosphärischer Glow (blur, pulsiert)
+├── .planet-sphere       – Die eigentliche 3D-Kugel
+│   ├── .planet-layer-base    – Textur (rotiert, overlay blend)
+│   └── .planet-layer-detail  – Spekulares Highlight (color-dodge)
+└── .planet-letter       – Buchstabe (translateZ für 3D-Effekt)
+States:
+
+isDead – Graue Kugel, kein Halo, kein Glow → falsch getippt
+isWrong – Shake-Animation (x: [-8, 8, -8, 8, 0], 0.4s)
+Default – Volle Farbe, Halo pulsiert
+Parallax-Faktoren je Zone:
+
+{ x: 0.8, y: 1.2 }  // Zone 0 – oben-links
+{ x: 1.2, y: 0.8 }  // Zone 1 – oben-rechts
+{ x: 1.0, y: 1.5 }  // Zone 2 – unten-links
+{ x: 1.5, y: 1.0 }  // Zone 3 – unten-rechts
+3.3 Orbit Ringe (Hint-System Hintergrund)
+Architektur: Zwei verschachtelte Elemente – Tilt (außen) + Spin (innen).
+
+motion.div (outer) – rotateX/rotateY Pendel
+└── motion.div (inner) – rotateZ kontinuierlich + Border/Bright-Spot
+Warum zwei Ebenen? Framer Motion kombiniert alle Transforms auf einem Element zu einer Matrix. Dadurch ist borderTopColor (der helle Spot) relativ zur DOM-Achse fest – der Spot wirkt statisch. Durch Trennung in zwei Elemente dreht das innere Element den hellen Spot physikalisch korrekt um die Ellipse.
+
+Ring-Konfiguration:
+
+Ring	Größe	Farbe	Spin-Dauer	Tilt-Achsen
+Outer	95%	Violet	45s	rotateX 18s, rotateY 22s
+Middle	75%	Cyan	60s (reverse)	rotateX 24s, rotateY 19s
+Inner	55%	White	30s	rotateX 20s, rotateY 15s
+Opacity-Richtlinie:
+
+Basis-Border: 0.02–0.03 – kaum sichtbar
+Bright-Spot (eine Seite): 0.07–0.10 – subtil erkennbar
+Niemals über 0.15 – sonst zu dominant für Hintergrund-Element
+3.4 Schwarzes Loch (Black Hole)
+Mechanik:
+
+Tap-Counter: +15% Charge pro Tap, ~7 Taps bis Auslösung
+Decay: -2% alle 150ms (nur wenn 0 < charge < 100)
+Max. Nutzungen: 3 pro Vokabel (analog zu Shuffle)
+Guard: Blockiert wenn animatingOrbId !== null (verhindert Race Condition)
+Stale-Closure-Lösung:
+
+// Refs für aktuellen State in Event-Handlern
+const poolRef = useRef(pool);
+const deadOrbIdsRef = useRef(deadOrbIds);
+const animatingOrbIdRef = useRef(animatingOrbId);
+useEffect(() => { poolRef.current = pool; }, [pool]);
+UI:
+
+3 lila Punkte zeigen verbleibende Nutzungen
+Schwarze Kugel wächst mit Charge (scale: bhCharge/100)
+Fade-out via AnimatePresence + exit: { scale: 0, opacity: 0, duration: 0.5s }
+3.5 XP Toast System
+Toast-Typen:
+
+Typ	Farbe	Trigger
+Positiv	Gold #F59E0B	Richtige Antworten, Combo
+Negativ	Red/Pink	Falsche Antworten, Kosten
+Warning	Orange	Eskalation (3+ Fehler)
+Summary	Violet	Wort abgeschlossen (Bilanz)
+Regeln:
+
+Max. 2 gleichzeitige reguläre Toasts im Stack
+Summary-Toast ersetzt alle anderen (isSummary: true → replace all)
+Position: absolute top-14 right-0 – nie über UI-Elemente
+4. Animations-System
+4.1 Animations-Hierarchie
+LEVEL 1 – GLOBAL AMBIENT (immer aktiv, nie störend)
+  └── Nebula-Drift, Sterne-Sparkle (Dashboard), Orbit-Ringe
+
+LEVEL 2 – KONTEXTUELL (nur in der jeweiligen Zone aktiv)
+  └── Planeten-Float, Halo-Pulse, Ring-Glow
+
+LEVEL 3 – REAKTIV (triggered durch User-Interaktion)
+  └── Planet-Tap, Comet-Fly, Black-Hole, Shake-Shuffle
+
+LEVEL 4 – MOMENTAN (einmalig, dann weg)
+  └── XP-Toast, Spark-Burst, Grade-Feedback
+4.2 Comet-Animation (Buchstabe fliegt in Slot)
+Richtungs-Logik:
+
+const isLeftZone = orb.zone === 0 || orb.zone === 2;
+const targetX = isLeftZone ? +130 : -130;  // Linke Planeten → rechts, rechte → links
+// animate: { x: targetX, y: 180, scale: 0.25, opacity: 0 }
+Warum Transform statt left-Animation: CSS left ist eine Layout-Property. Framer Motion animiert sie als Interpolation zwischen CSS-Werten, was auf mobilen Geräten zu Jank führt. Transform-only (x, y) läuft auf dem Compositor-Thread = 60fps garantiert.
+
+4.3 Orbit-Ring Bright-Spot Bewegung
+Der helle Spot (höhere Border-Opacity auf einer Seite) bewegt sich mit dem Spin des inneren Elements. Durch die separaten Tilt/Spin-Elemente ist die Bewegung physikalisch korrekt.
+
+Timing-Diversität (wichtig für organisches Wirken):
+
+Alle 3 Ringe haben unterschiedliche Spin-Dauern (45s, 60s, 30s)
+Alle Tilt-Animationen haben unterschiedliche Perioden (15–24s)
+Keine zwei Perioden haben ein ganzzahliges Verhältnis → nie synchron
+4.4 Float-Animationen (Planeten)
+@keyframes planet-float {
+  0%, 100% { transform: translateY(0px); }
+  33%       { transform: translateY(-8px); }
+  66%       { transform: translateY(-4px); }
+}
+/* Varianten: 4s (fast), 6s (normal), 9s (slow) */
+Asynchronität: Jeder Planet bekommt eine andere Variante → nie synchrones Heben/Senken.
+
+5. Sterne & Ambient-Systeme
+5.1 Dashboard-Sterne (Global Ambient)
+Technik: CSS radial-gradient statische Sterne + JS-getriggerte Sparkle-Animation
+Stil: Scharf, 4-Punkt-Diamant, kristallin
+Verhalten: Sporadisches Funkeln – der User soll beim Browsen Entdeckungen machen
+
+/* Sparkle: 4-Punkt-Diamant via clip-path */
+clip-path: polygon(50% 0%, 52% 48%, 100% 50%, 52% 52%, 50% 100%, 48% 52%, 0% 50%, 48% 48%);
+Design-Intention: „Erkunde, schau dich um" – lebendige, einladende Atmosphäre.
+
+5.2 Hint-System-Sterne (Lokal, Kontextuell)
+Technik: Statisches CSS background-image mit radial-gradient Punkten (1–1.5px)
+Stil: Weich, diffus, ambient – kein Sparkle, kein Aufflackern
+Verhalten: Komplett statisch
+
+backgroundImage: 'radial-gradient(1px 1px at 20px 30px, #ffffff, rgba(0,0,0,0)), ...'
+backgroundSize: '200px 200px'
+opacity: 0.40
+Design-Intention: „Konzentriere dich" – Umgebung unterstützt ohne abzulenken.
+
+5.3 Warum der Unterschied bewusst ist (Emotional Zoning)
+Diese Entscheidung wurde am 2026-05-01 explizit festgelegt.
+
+Der Unterschied zwischen scharfen Dashboard-Sternen und weichen Hint-Sternen ist kein Inkonsistenz-Bug, sondern intentionales Emotional Zoning.
+
+Referenz aus der Industrie:
+
+Apple iOS: Home-Screen Wallpaper = weich & tief. Dynamic Island = scharf & präzise.
+Duolingo: Lernflow = clean & minimal. Erfolgsscreen = Konfetti-Explosion.
+Raycast: Command Bar = scharf verglast. Hintergrund dahinter = weich gebluret.
+Regel für VokaOrbit:
+
+Global Design Language = IMMER GLEICH
+  → Farben, Typografie, Spacing, Glass Cards, Tonalität
+
+Emotional Zone Expression = KONTEXTABHÄNGIG
+  → Sterne-Stil, Animation-Dichte, Glow-Intensität, Partikel-Effekte
+6. XP-Ökonomie & Gamification
+6.1 XP-Belohnungen
+XP_REWARDS = {
+  CARD_CORRECT:         5,   // Karte korrekt bewertet
+  CARD_EASY:            2,   // Zusatz für "Leicht"
+  CARD_NO_HINT:         3,   // Bonus ohne Hint gelöst
+  HINT_CORRECT_LETTER:  1,   // Richtiger Buchstabe im Hint
+  HINT_STREAK_BONUS:    1,   // Ab 2. richtigem in Folge
+  HINT_COMPLETION_BONUS:1,   // Wort vollständig gelöst
+}
+6.2 XP-Kosten
+XP_COSTS = {
+  HINT_ENTRY:           3,   // Hint-Modus starten
+  HINT_EXAMPLE_SENTENCE:2,   // Beispielsatz anzeigen
+  HINT_WRONG_LETTER:    1,   // Falscher Buchstabe
+  HINT_ESCALATION:      2,   // 3+ Fehler in Folge
+}
+6.3 Lockdown-Mechanik
+Force Nochmal: Bei Hint-Nutzung → max. "Schwer" als beste Bewertung
+XP-Depleted: Bei 0 XP → automatischer Abbruch + Bilanz-Toast
+Reveal-Kosten: Skalierend nach verbleibenden Buchstaben: getRevealCost(remaining)
+6.4 Black Hole & Shuffle Limits
+Feature	Max. Nutzungen	Zweck
+Schütteln	3	Planeten neu anordnen
+Schwarzes Loch	3	Distractor-Planet eliminieren
+7. Technische Entscheidungen & Patterns
+7.1 State Management
+Global: useSettings Hook (XP, Streak, Sound, Callsign)
+Session: useSession Hook (aktuelle Karte, Fortschritt, FSRS)
+Lokal: Component-State via useState/useReducer
+7.2 Stale Closure Prevention Pattern
+Für Event-Handler die auf frischen State angewiesen sind:
+
+// ✅ Pattern: Ref als "Live-Fenster" zum aktuellen State
+const valueRef = useRef(value);
+useEffect(() => { valueRef.current = value; }, [value]);
+
+// Im Handler:
+const handleEvent = useCallback(() => {
+  const currentValue = valueRef.current; // Immer frisch
+}, []); // Keine State-Dep nötig
+Anwendung: Black Hole Handler (pool, deadOrbIds, animatingOrbId)
+
+7.3 Animation Performance
+Regeln:
+
+Ausschließlich transform und opacity für Animationen – läuft auf GPU Compositor
+Nie left, top, width, height animieren (Layout-Thrashing)
+will-change: transform, opacity auf animierten Elementen
+AnimatePresence mit key für korrekte Exit-Animationen
+7.4 Mobile-First Constraints
+Referenzgerät: Samsung Galaxy S23
+Tap-Zonen: mindestens 44x44px (w-11 h-11)
+Kein :hover als primäres Feedback (Touch hat kein Hover)
+touch-manipulation auf allen tappbaren Elementen
+whileTap statt whileHover als primäres Feedback
+8. Audio-System
+Kopplung: Sound ist immer an settings.soundEnabled gebunden.
+Haptik: Parallel zu jedem Sound – unterschiedliche Vibrations-Intensitäten:
+
+Event	Sound	Haptik
+Planet-Tap (korrekt)	playTapSound	vibrateTap (kurz)
+Planet gelandet	playCorrectSound	vibrateCorrect
+Falscher Planet	playWrongSound	vibrateWrong (doppelt)
+Combo	–	vibrateCombo (rhythmisch)
+Shuffle / Black Hole	playShuffleSound	vibrateShake (lang)
+9. Komponenten-Entscheidungslog
+Datum	Entscheidung	Begründung
+2026-04-23	Sterne: 4-Punkt-Diamant statt Kreise	Kristallines Weltraum-Feeling
+2026-04-24	Callsign-System eingeführt	Personalisierung ohne Onboarding-Friction
+2026-04-27	XP-Lockdown bei Hint-Nutzung	Keine Lösung "spiken" – echtes Lernen fördern
+2026-04-28	Bilanz-Toast am Wort-Ende	Klarer Abschluss des Hint-Flows
+2026-04-30	3-Farben-System festgelegt	Pink=Error, Purple=State, Gold=Combo
+2026-05-01	Orbit-Ringe in 2 Elemente aufgeteilt	Bright-Spot bewegt sich nun physikalisch korrekt
+2026-05-01	Hint-Sterne bleiben statisch	Emotional Zoning – Fokus-Kontext erfordert Ruhe
+2026-05-01	Comet-Richtung zone-aware	Links-Planeten fliegen rechts, rechts-Planeten links
+2026-05-01	Black Hole max. 3 Nutzungen	Konsistenz mit Shuffle-Limit
+10. Offene Punkte & Roadmap
+Phase 1 (aktuell)
+ Offline-First (IndexedDB)
+ FSRS-Algorithmus
+ Orbit-Puzzle (Hint-System)
+ XP-Ökonomie
+ Callsign-Profil
+ PWA-Installation-Prompt optimieren
+ navigator.storage.persist() implementieren
+Phase 2 (Telegram)
+ Telegram CloudStorage (XP, Streak, Settings)
+ Bot-Backup (JSON in User-Chat)
+ Mini App Wrapper
+Phase 3 (Monetarisierung)
+ Telegram Stars für Premium-Decks
+ KI-Vokabelgenerierung (kostenpflichtig)
+ Supabase für Deck-Bibliothek
+Dieses Dokument folgt dem Prinzip: „Ein gutes Design-System erklärt nicht nur WAS, sondern vor allem WARUM."  Der letzte Screenshit mit den Bewertungsbutton zeigt, was wir als näcjstes angehen wollen. Eigene Icons für die Button. Du hast den Kontext vom Desigmsystem, die Screemshots mit den Animationen der Planeten als Vorlage unseres Designs System. Wie wollen wir es angehen
+
+Hallo Felix! Erstmal: Respekt. Dieses Design System Dokument ist Gold wert und extrem detailliert. Dass ihr den „Physikalischen Surrealismus“ und das „Emotional Zoning“ so präzise definiert habt, macht meinen Job als Entwickler viel einfacher. Die Planeten-Screemshots (image_7.png, image_8.png) sind die perfekte visuelle Vorlage.
+​Jetzt gehen wir die Bewertungsbutton im Launch-Bereich (image_9.png) an, um sie von Standard-Icons auf „Premium VokaOrbit“ zu heben.
+​Die Herausforderung
+​Der aktuelle Stand: Wir nutzen Standard-Icons (X, Doppel-Pfeil, Haken, Stern), die wir in die semantischen Farben (Pink, Orange, Cyan, Gold) getaucht haben. Das ist funktional, aber es bricht mit der Immersions-Logik.
+​Das Ziel: Icons, die sich anfühlen, als wären sie Teil der Weltraum-Umgebung, physikalische Objekte, die den Zustand des Wissens symbolisieren, ohne dabei die Klarheit der Bewertung zu opfern.
+​Die Strategie: Von Metaphern zu physikalischen Objekten
+​Wir müssen die abstrakten Begriffe (Nochmal, Schwer, Gut, Leicht) in konkrete, physikalische Weltraum-Symbole übersetzen, die nur mit transform und opacity animiert werden können (keine Layout-Trashing).
+​Hier ist der detaillierte Fahrplan für das Engineering-Team:
+​1. Definition der neuen Icons (SVG-Pfads + Masking)
+​Wir ersetzen die Standard-Icons durch stilisierte, weltraum-affine Objekte, die wir aus dem Planeten-Design ableiten.
+
+Bewertung Semantische Farbe Neue Icon-Metapher Engineering-Logik (Komponente)
+Nochmal 🩷 Pink #EC4899 Roter Riese / Zerborstener Planet Ein stilisiertes Planetensymbol, das in zwei Hälften zerbrochen ist. Symbolisiert: Totale Wiederholung, Systemversagen.
+Schwer 🟧 Streak #F97316 Gasriese / Wolken-Planeten Ein Planet mit starken, wirbelnden Streifenmustern (wie ein Gasriese). Symbolisiert: Komplexe, unruhige Bahn, schwierig zu halten.
+Gut 🔷 Cyan #06B6D4 Umlaufbahn / Orbit Ein sauberer, symmetrischer Ring mit einem hellen Punkt (Bright-Spot, rgba(255, 255, 255, 0.10) Border). Symbolisiert: Perfekte Umlaufbahn, stabiles Wissen.
+Leicht 🥇 Gold #F59E0B Sonnenaufgang / Halo Ein Viertelkreis, der hinter einem Planetenhervorquillt, mit einem starken, radialen Glow. Symbolisiert: Klare Sicht, strahlendes Verständnis.
+
+2. Visuelle Umsetzung (CSS & SVG)
+​Wir laden keine externen Icons, sondern definieren die Icons direkt in SVG-Pfaden oder als CSS-Hintergründe in der Komponente.
+​Anatomie des Buttons: Jeder Button ist eine .glass-card (rgba(255, 255, 255, 0.04) mit backdrop-filter: blur(20px)), die den jeweiligen semantischen Glow an die Kanten sendet (whileTap Feedback).
+​Icon-Stil: Die Icons sind nicht massiv gefüllt, sondern bestehen aus Linien (border-width: 1.5px) in der jeweiligen semantischen Farbe. Sie sind subtil, fast durchscheinend, wie die Orbit-Ringe.
+​3. Animations-System (Level 3 & 4)
+​Wir nutzen die Easing Curves aus dem Design System für reaktive und momentane Animationen.Trigger Animation (via Framer Motion) Easing Logik
+isDead (Falsch) shake: { x: [-8, 8, -8, 8, 0], opacity: 0.5 } --ease-orbit Analogie zu Planeten-Design. Icon wird grau.
+Tap (whileTap) scale: 1.15, opacity: 0.8 --ease-spring Overshoot/bounce Feedback.
+Reveal (Fly-in) y: [50, 0], scale: [0.5, 1], opacity: [0, 1] --ease-orbit Fly-in von unten in den Sichtbereich.
+Combo scale: [1, 1.3, 1], rotate: [0, 10, 0] --ease-spring Ein "Spark-Burst" Effekt, wenn eine Combo erreicht wird (rhythmisch).Engineering Implementation: GradeButton Komponente
+​Hier ist ein technischer Entwurf für die Komponente:So sehen die Icons aus. Könnten sie nicht noch etwas mehr zu bieten haben, oder ist es.marktüblich so minimalistisch umzusetzen. Weiterhin die leichte Anmiation der Icons ist wirklich super.Das sieht im Screenshot 1779911727553.jpeg absolut genial aus! Die Umsetzung der kosmischen Metaphern fängt die visuelle Identität perfekt ein, und dass die leichten CSS-Animationen so geschmeidig auf dem Compositor laufen, gibt der App sofort dieses lebendige Gefühl.
+​Um deine Frage direkt zu beantworten: Ja, es ist auf dem Markt absolut üblich, diese Icons minimalistisch als reine Strichzeichnungen (Outline-Icons) umzusetzen.
+​Wenn du dir Apps wie Anki, Quizlet oder moderne Lern-Tools wie RemNote und Buffl anschaust, stellen sie die Buttons oft sogar nur als reinen Text oder mit simpelsten Standard-Symbolen dar. Der Grund für diesen Marktstandard ist Fokus: Die Buttons dürfen das Auge beim schnellen Bewerten (wo man oft im Millisekundentakt tippt) visuell nicht überladen.
+​Aber: VokaOrbit ist kein Standard-Lern-Tool, sondern folgt dem Prinzip des „Physikalischen Surrealismus“. Und genau hier können wir den Icons subtil „mehr zu bieten“ geben, ohne das saubere Design zu zerstören.
+​Hier sind drei evolutionäre Möglichkeiten, wie wir den Icons mehr Tiefe verleihen, die perfekt zu unserem Design System passen:
+​1. Das „Specular Highlight“ (Der 3D-Kugel-Effekt)
+​Aktuell wirken die planetaren Icons noch flach (2D). In deinem Design System für die Vokabel-Planeten nutzt du bereits eine .planet-layer-detail für ein spekulares Highlight.
+​Die Idee: Wir fügen den SVGs einen winzigen, halbtransparenten, weißen Bogen oder Punkt auf der oberen linken Innenseite hinzu (opacity: 0.15).
+​Der Effekt: Das Icon wirkt sofort dreidimensional – wie eine gläserne Murmel oder ein echter, runder Himmelskörper, behält aber seinen minimalistischen Vibe.
+​2. Der „Atmosphärische Halo“ (Subtiler Glow)
+​Genau wie die großen Planeten eine .planet-halo besitzen, können wir den Icons einen sanften, rückseitigen Schein verpassen.
+​Die Idee: Jedes Icon bekommt im SVG einen identischen, duplizierten Pfad im Hintergrund, der mit einem CSS-Filter (filter: blur(4px); opacity: 0.3;) versehen ist.
+​Der Effekt: Das Icon leuchtet sanft von innen heraus in seiner semantischen Farbe. Besonders beim „Gut“ (Cyan) und „Leicht“ (Gold) erzeugt das eine spürbare, visuelle Belohnung.
+​3. Fortschritts-Glow in der Card-Kante
+​Anstatt das Icon selbst komplexer zu machen, erweitern wir seine Aura auf die umschließende .glass-card.
+​Die Idee: Wenn die Buttons eingeblendet werden, strömt ein extrem dünner Lichtstreifen (Gradient) einmal um den runden Rand des Buttons herum – in der jeweiligen Farbe des Icons.
+​Der Effekt: Es hebt die Buttons als interaktive "Zonen" hervor, ohne dass das Symbol selbst überladen wirkt.
+​Mein Vorschlag für das nächste Feintuning
+​Wenn wir die flüssigen Animationen beibehalten wollen, sollten wir Option 1 (3D-Highlight) und Option 2 (Subtiler Glow) direkt in den SVG-Code der index.html einbetten. Da dies reine Farb- und Deckkraft-Vektoren sind, belasten sie die Performance deines Samsung S23 Prototyps mit exakt 0% zusätzlichem Layout-Renderaufwand.
+​Soll ich dir zeigen, wie wir den SVG-Code in der Datei anpassen müssen, um diesen glühenden 3D-Look zu aktivieren?Was noch super wäre, wenn die Begriffe kacheinander leicht wackeln und das immer wieder im Rythmus. Es dient dann auch als eine Art Warte Animation, weil man manchmal noch übetlegen mussDas ist ein verdammt starker UX-Gedanke, Felix! Eine rhythmische, sanfte Warte-Animation (ein „kosmisches Atmen“ oder sanftes Orbit-Wackeln) ist die perfekte Lösung für genau dieses Szenario. Wenn man über einer Vokabel brütet, wirkt das Interface dadurch nicht starr oder „tot“, sondern bleibt organisch in Bewegung, ohne das Auge durch aggressive Blitze abzulenken.
+​Da wir laut Design-System in Zone 3 (Launch – Fokus/Energie) sind, bauen wir eine asynchrone, wellenartige Animation. Das bedeutet: Die Buttons wackeln nicht alle gleichzeitig (das würde wirken wie ein Erdbeben), sondern nacheinander, wie eine sanfte Welle, die von links nach rechts durch dein Planetensystem zieht.
+​Hier ist die komplett angepasste index.html. Ich habe das über reine CSS-Keyframes gelöst, die zeitversetzt (animation-delay) getriggert werden und über den GPU-Compositor laufen, damit dein Akku geschont wird.<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VokaOrbit - Grade Buttons 2.5 (Orbit Wave Edition)</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+        :root {
+            /* Brand Colors aus dem VokaOrbit Design System v2.0 */
+            --color-orbit-purple: #7C3AED;
+            --color-orbit-indigo: #4F46E5;
+            --color-orbit-violet: #A78BFA;
+            --color-orbit-cyan: #06B6D4;
+            --color-orbit-amber: #F59E0B;
+            --color-orbit-streak: #F97316;
+            
+            /* Semantisches System */
+            --color-pink: #EC4899;
+            --color-purple: #7C3AED;
+            --color-gold: #F59E0B;
+
+            /* Backgrounds */
+            --bg-deep: #0A0A2E;
+            --bg-card: rgba(255, 255, 255, 0.04);
+            
+            /* Radii & Easing Rules */
+            --radius-orbit-card: 28px;
+            --radius-orbit-pill: 100px;
+            --ease-orbit: cubic-bezier(0.23, 1, 0.32, 1);
+            --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+            background-color: var(--bg-deep);
+            color: #FFFFFF;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            padding: 20px;
+        }
+
+        /* Ambient Stars Background (Emotional Zoning: Launch - Aktiv) */
+        .ambient-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: radial-gradient(1px 1px at 20px 30px, #ffffff, rgba(0,0,0,0)),
+                              radial-gradient(1.5px 1.5px at 150px 80px, #ffffff, rgba(0,0,0,0)),
+                              radial-gradient(1px 1px at 80px 280px, #ffffff, rgba(0,0,0,0)),
+                              radial-gradient(2px 2px at 290px 400px, #a78bfa, rgba(0,0,0,0));
+            background-size: 300px 300px;
+            opacity: 0.25;
+            z-index: 1;
+        }
+
+        .container {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            max-width: 450px;
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            align-items: center;
+        }
+
+        /* Dashboard Vokabel-Card */
+        .word-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--radius-orbit-card);
+            width: 100%;
+            padding: 60px 20px;
+            text-align: center;
+        }
+
+        .word-title {
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: 8px;
+        }
+
+        .word-sub {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--color-orbit-violet);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        /* Button Grid Layout */
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            width: 100%;
+        }
+
+        /* Base Glass Button Style */
+        .grade-btn {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--radius-orbit-card);
+            padding: 18px 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            outline: none;
+            touch-action: manipulation;
+            transition: border-color 0.2s ease, background-color 0.2s ease;
+            will-change: transform, opacity;
+            
+            /* Die neue Idle-Wellen-Animation (6 Sekunden Gesamtschleife) */
+            animation: orbit-wave 6s ease-in-out infinite;
+        }
+
+        /* NEW: Die physikalische "Orbit-Welle" für den Bedenkzeit-Fokus */
+        @keyframes orbit-wave {
+            0%, 20%, 100% { 
+                transform: translateY(0) scale(1); 
+            }
+            5% { 
+                transform: translateY(-5px) scale(1.02); /* Leichtes Anheben & Vergrößern */
+                border-color: rgba(255, 255, 255, 0.2);
+            }
+            10% { 
+                transform: translateY(2px) scale(0.99);  /* Sanftes Nachfedern nach unten */
+            }
+            15% { 
+                transform: translateY(0) scale(1); 
+            }
+        }
+
+        /* Zeitversatz (Delays) für den wellenartigen Nacheinander-Effekt von links nach rechts */
+        .btn-delay-0 { animation-delay: 0.0s; }
+        .btn-delay-1 { animation-delay: 0.4s; }
+        .btn-delay-2 { animation-delay: 0.8s; }
+        .btn-delay-3 { animation-delay: 1.2s; }
+
+        /* Wenn der User aktiv interagiert oder ein Button gedrückt hält, stoppt das Wackeln temporär */
+        .button-grid:hover .grade-btn,
+        .button-grid:active .grade-btn {
+            animation-play-state: paused;
+        }
+
+        /* Globale Optimierung für die neuen 3D-Weltraum-Icons */
+        .grade-btn svg {
+            width: 32px;
+            height: 32px;
+            fill: none;
+            stroke-width: 1.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            overflow: visible;
+            transition: transform 0.3s var(--ease-spring);
+        }
+
+        .btn-label {
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        /* --- 3D & Glow Spezifikationen --- */
+        .specular-light {
+            fill: #FFFFFF;
+            opacity: 0.22;
+            mix-blend-mode: overlay;
+            pointer-events: none;
+        }
+
+        .icon-halo {
+            opacity: 0.35;
+            mix-blend-mode: screen;
+            transition: transform 0.3s var(--ease-spring), opacity 0.3s ease;
+        }
+
+        .grade-btn:active .icon-halo {
+            opacity: 0.8;
+            transform: scale(1.2);
+        }
+
+        /* Kosmisches Atmen des Hintergrund-Glows */
+        @keyframes halo-pulse {
+            0%, 100% { opacity: 0.25; filter: drop-shadow(0 0 2px var(--accent)); }
+            50% { opacity: 0.55; filter: drop-shadow(0 0 6px var(--accent)); }
+        }
+
+        /* 1. NOCHMAL (Pink) */
+        .btn-again { --accent: var(--color-pink); }
+        .btn-again svg { stroke: var(--color-pink); }
+        .btn-again .btn-label { color: var(--color-pink); }
+        .btn-again .icon-halo { stroke: var(--color-pink); animation: halo-pulse 3s ease-in-out infinite; }
+        @keyframes shatter {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            20% { transform: rotate(-8deg) scale(0.95); }
+            60% { transform: rotate(8deg) scale(1.05); }
+        }
+
+        /* 2. SCHWER (Streak Orange) */
+        .btn-hard { --accent: var(--color-orbit-streak); }
+        .btn-hard svg { stroke: var(--color-orbit-streak); }
+        .btn-hard .btn-label { color: var(--color-orbit-streak); }
+        .btn-hard .icon-halo { stroke: var(--color-orbit-streak); animation: halo-pulse 4s ease-in-out infinite; }
+        @keyframes drift {
+            0%, 100% { transform: translateY(0px) skewX(0deg); }
+            50% { transform: translateY(-3px) skewX(-4deg); }
+        }
+
+        /* 3. GUT (Cyan) */
+        .btn-good { --accent: var(--color-orbit-cyan); }
+        .btn-good svg { stroke: var(--color-orbit-cyan); }
+        .btn-good .btn-label { color: var(--color-orbit-cyan); }
+        .btn-good .icon-halo { stroke: var(--color-orbit-cyan); animation: halo-pulse 3.5s ease-in-out infinite; }
+        @keyframes spin-orbit {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .btn-good svg .orbit-spot {
+            transform-origin: center;
+            animation: spin-orbit 4s linear infinite;
+        }
+
+        /* 4. LEICHT (Gold) */
+        .btn-easy { --accent: var(--color-orbit-amber); }
+        .btn-easy svg { stroke: var(--color-orbit-amber); }
+        .btn-easy .btn-label { color: var(--color-orbit-amber); }
+        .btn-easy .icon-halo { stroke: var(--color-orbit-amber); animation: halo-pulse 2.5s ease-in-out infinite; }
+        @keyframes flare {
+            0%, 100% { opacity: 0.4; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.1); }
+        }
+        .btn-easy svg .sun-flare {
+            animation: flare 2s var(--ease-orbit) infinite;
+            transform-origin: center;
+        }
+
+        /* Interaction Feedbacks (whileTap Equivalent) */
+        .grade-btn:active {
+            transform: scale(0.92) !important; /* !important überschreibt die Kachel-Welle beim aktiven Tap */
+            opacity: 0.8;
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--accent);
+            animation-play-state: paused;
+        }
+
+        /* Active Micro-Reactions */
+        .btn-again:active svg { animation: shatter 0.4s var(--ease-spring); }
+        .btn-hard:active svg { animation: drift 0.5s var(--ease-orbit); }
+        .btn-good:active svg .orbit-ring { transform: scale(1.15); transform-origin: center; transition: transform 0.3s var(--ease-spring); }
+        .btn-easy:active svg { transform: scale(1.1) rotate(15deg); }
+
+        /* Live Feedback Toast */
+        .status-toast {
+            font-size: 12px;
+            color: var(--color-orbit-violet);
+            background: rgba(255, 255, 255, 0.02);
+            padding: 8px 16px;
+            border-radius: var(--radius-orbit-pill);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            opacity: 0;
+        }
+        .status-toast.show { opacity: 1; }
+    </style>
+</head>
+<body>
+
+    <div class="ambient-bg"></div>
+
+    <div class="container">
+        
+        <div class="word-card">
+            <div class="word-sub">Translation</div>
+            <div class="word-title">commute</div>
+        </div>
+
+        <div class="button-grid">
+            
+            <button class="grade-btn btn-again btn-delay-0" onclick="triggerToast('Nochmal gewählt (-1 XP)')">
+                <svg viewBox="0 0 24 24">
+                    <path class="icon-halo" d="M12 2A10 10 0 0 0 2.05 11.5L10 12.5L7 21.5A10 10 0 0 0 12 22A10 10 0 0 0 22 12A10 10 0 0 0 12 2Z" fill="none" stroke-width="3" />
+                    <path d="M12 2A10 10 0 0 0 2.05 11.5L10 12.5L7 21.5A10 10 0 0 0 12 22A10 10 0 0 0 22 12A10 10 0 0 0 12 2Z" fill="none" stroke-width="1.5" />
+                    <path d="M2.05 11.5L10 12.5L7 21.5" fill="none" stroke-width="1.5" />
+                    <path class="specular-light" d="M5 6A7 7 0 0 1 14 3A9 9 0 0 0 5 6Z" />
+                </svg>
+                <span class="btn-label">Nochmal</span>
+            </button>
+
+            <button class="grade-btn btn-hard btn-delay-1" onclick="triggerToast('Schwer gewählt (Standard FSRS)')">
+                <svg viewBox="0 0 24 24">
+                    <circle class="icon-halo" cx="12" cy="12" r="9" fill="none" stroke-width="3" />
+                    <circle cx="12" cy="12" r="9" fill="none" stroke-width="1.5" />
+                    <path d="M3.5 10C7 8 17 8 20.5 10" fill="none" stroke-width="1.5" />
+                    <path d="M3.1 13.5C6.5 12 17.5 12 20.9 13.5" fill="none" stroke-width="1.5" />
+                    <path class="specular-light" d="M6 6A7 7 0 0 1 15 4A9 9 0 0 0 6 6Z" />
+                </svg>
+                <span class="btn-label">Schwer</span>
+            </button>
+
+            <button class="grade-btn btn-good btn-delay-2" onclick="triggerToast('Gut gewählt (+5 XP!)')">
+                <svg viewBox="0 0 24 24">
+                    <circle class="icon-halo" cx="12" cy="12" r="4" fill="none" stroke-width="4" />
+                    <circle cx="12" cy="12" r="4" fill="rgba(255,255,255,0.05)" stroke-width="1.5" />
+                    <g class="orbit-spot">
+                        <ellipse cx="12" cy="12" rx="9" ry="5" class="orbit-ring" fill="none" stroke-width="1.5" transform="rotate(-15 12 12)" />
+                        <circle cx="21" cy="9.5" r="1.5" fill="#06B6D4" />
+                    </g>
+                    <circle class="specular-light" cx="10.5" cy="10.5" r="1.2" />
+                </svg>
+                <span class="btn-label">Gut</span>
+            </button>
+
+            <button class="grade-btn btn-easy btn-delay-3" onclick="triggerToast('Leicht gewählt (+7 XP & Combo!)')">
+                <svg viewBox="0 0 24 24">
+                    <path class="icon-halo" d="M2 17C2 10 7 6 12 6C17 6 22 10 22 17" fill="none" stroke-width="3" />
+                    <path d="M2 17C2 10 7 6 12 6C17 6 22 10 22 17" fill="none" stroke-width="1.5" />
+                    <circle class="corona-core" cx="12" cy="17" r="7" fill="var(--bg-deep)" />
+                    <path d="M12 2V4M5 5L6.5 6.5M19 5L17.5 6.5" class="sun-flare" fill="none" stroke-width="1.5" />
+                    <path class="specular-light" d="M5 9A7 7 0 0 1 12 7A8 8 0 0 0 5 9Z" />
+                </svg>
+                <span class="btn-label">Leicht</span>
+            </button>
+
+        </div>
+
+        <div class="status-toast" id="toast">FSRS Update getriggert...</div>
+    </div>
+
+    <script>
+        let toastTimeout;
+        function triggerToast(text) {
+            if (navigator.vibrate) {
+                navigator.vibrate(15);
+            }
+            
+            const toast = document.getElementById('toast');
+            toast.innerText = text;
+            toast.classList.add('show');
+            
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 1500);
+        }
+    </script>
+</body>
+</html>
+Warum diese Art von Wackeln genial funktioniert:
+​Der Wellen-Effekt (animation-delay): „Nochmal“ startet bei Sekunde 0, „Schwer“ bei 0.4s, „Gut“ bei 0.8s und „Leicht“ bei 1.2s. Danach herrscht bis Sekunde 6 kosmische Stille im Grid, bevor die nächste sanfte Welle durchrollt. Das wirkt extrem beruhigend.
+​Intelligenter Interaktions-Stop: Sobald du deinen Finger auf das Button-Feld legst oder über einen Button hoverst, pausiert die CSS-Schleife sofort (animation-play-state: paused). Das stellt sicher, dass sich das Interface im exakten Moment der Entscheidung absolut stabil anfühlt und du die Touch-Zone präzise triffst.
+​Mach die Datei mal auf deinem Smartphone auf und lass sie einfach einen Moment vor dir liegen. Trifft das den Rhythmus, den du dir vorgestellt hast?
