@@ -111,3 +111,60 @@ Sortierung + Suche.
 AI-Unterstützung (Deck-Generierung + Beispiel-Sätze).
 Das Space-Thema ist dein großer Vorteil — lean into it (z.B. "Neues Deck starten" als "Neue Mission starten", Decks als "Planeten", etc.).
 Möchtest du, dass ich dir konkrete Figma-ähnliche Beschreibungen oder Komponenten-Struktur für die verbesserte Deck-Übersicht liefere? Oder sollen wir uns als Nächstes den Train-Bereich anschauen?
+
+Wo soll das Logo hin ?
+
+Antwort: Wo soll das Logo hin?
+Hier eine klare, praxisnahe Empfehlung für deine App:
+1. Beste Position (Hauptempfehlung)
+Header — ganz links oben
+Ersetze das aktuelle kleine lila Planet-Icon durch dein richtiges Logo.
+Das Logo sollte ca. 32–40px groß sein (bei Mobile).
+Daneben (oder darunter) der App-Name "Orbit" oder "it Orbit" in schöner, moderner Schrift.
+Warum hier?
+Das ist der klassische und erwartete Platz bei Mobile Apps.
+Nutzer sehen sofort, in welcher App sie sind.
+Passt perfekt zum aktuellen Design (du hast dort schon ein Icon).
+2. Weitere sinnvolle Logo-Platzierungen
+Bereich
+Empfehlung
+Wann sinnvoll?
+Header links
+Primärplatz
+Immer (Standard)
+Splash Screen
+Großes zentriertes Logo + Animation
+Beim App-Start
+Onboarding
+Logo oben auf jedem Screen
+Erster Eindruck
+Login / Empty State
+Logo oben zentriert
+Wenn Screen sehr leer ist
+Bottom Navigation
+Kleines Logo in der Mitte (Orbit-Tab)
+Als Markenverstärkung
+Settings / Profil
+Kleines Logo oben
+Weniger wichtig
+3. Konkrete Umsetzungsvorschläge für den Orbit-Screen
+Variante A (Sauber & Minimal – empfohlen):
+Links: Logo + "Orbit" (Text)
+Mitte: "Dein Orbit" als großer Titel
+Rechts: Streak (Feuer), Level, + Button
+Variante B (Stark markenlastig):
+Logo links (groß)
+Kein separater Text "Dein Orbit" → das Logo ist der Markenanker
+Darunter als Untertitel: "Dein Orbit"
+Variante C (Premium):
+Logo links
+Rechts daneben ein kleiner animierter Orbit-Ring (subtiler Loading/Status-Effekt)
+4. Logo-Richtlinien (wichtig für Konsistenz)
+Helle Version für dunklen Hintergrund (aktuell Violett/Space)
+Minimalistisch halten — zu viele Details sterben bei kleiner Darstellung
+Quadratisch oder leicht horizontal (für bessere Skalierbarkeit)
+SVG-Format verwenden (scharf bei allen Größen)
+App-Icon sollte dasselbe Motiv haben (für PWA + Homescreen)
+Schnell-Check:
+Möchtest du, dass ich dir eine genaue Layout-Beschreibung (mit Abständen und Komponenten) für den verbesserten Header mache? Oder soll ich dir zeigen, wie der gesamte Orbit-Screen mit richtig platziertem Logo aussehen könnte (Text-Preview)?
+Sag mir auch gerne, wie dein finales Logo aussieht (beschreibe es oder lade es hoch), dann kann ich noch präzisere Vorschläge machen.
