@@ -34,3 +34,4 @@
 
 - Glassmorphism Bereiche darauf prüfen , ob sie den Hintergrund durchlassen oder nicht und prüfen wie es sein soll
 
+- Zähler und Zeitsperre nach Vokabel , links, rechts slide im Lernmodus
