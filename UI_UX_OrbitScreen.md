@@ -213,3 +213,21 @@ Import-Tab Integrieren als Option im zentralen + Button Schlankeres Interface, w
 
 Wie klingt diese Richtung für dich, und bei welchem dieser Punkte im Orbit-Bereich sollen wir im Detail ansetzen (z.B. dem exakten UI-Layout für die Deck-Optionen)?
 
+Wo soll das Logo hin ?
+
+Das ist eine hervorragende und sehr strategische Frage für das Gesamtbild deiner App. Schauen wir uns dazu noch einmal das aktuelle Layout im Header an (zu sehen auf 1000054140.jpg, 1000054134.jpg und 1000054137.jpg).
+​Momentan hast du oben links in der lila Kapsel das stilisierte Planeten-Logo, daneben ist die Kapsel leer, und rechts sitzen das Schild-Icon sowie die Level- und Streak-Anzeige.
+​Damit die App sofort einen professionellen, wiedererkennbaren Markencharakter bekommt, ohne die cleane Weltraum-Ästhetik zu stören, gibt es zwei perfekte Optionen für die Platzierung:
+​Option 1: Die „Kapsel-Integration“ (Subtil & Modern)
+​Du nutzt den ohnehin vorhandenen Platz in der oberen linken Kapsel.
+​Wie es aussieht: Das Planeten-Icon bleibt genau dort, wo es ist. Direkt rechts daneben – in dem noch freien Raum innerhalb derselben lila Kapsel – platzierst du den eleganten Schriftzug „VocaOrbit“.
+​Vorteil: Es verbraucht keinen neuen Platz auf dem Bildschirm. Die obere Leiste wirkt dadurch perfekt ausbalanciert, ausgefüllt und wie aus einem Guss.
+​UX-Tipp: Wenn man auf diese gesamte linke Kapsel (Icon + Schriftzug) klickt, passiert nichts oder man gelangt immer zurück zum Haupt-Dashboard (ORBIT).
+​Option 2: Der „Hero-Header“ (Fokussiert & Identitätsstiftend)
+​Du ziehst das Logo aus der oberen Statusleiste heraus und gibst ihm einen prominenten Platz auf den Haupt-Screens.
+​Wie es aussieht: In der oberen Statusleiste entfällt das Logo komplett. Stattdessen wandern die Level-, Streak- und Schild-Icons etwas weiter nach links oder verteilen sich harmonisch. Das eigentliche Logo (Icon + Schriftzug „VocaOrbit“) sitzt stattdessen groß und zentriert direkt über der ersten großen Überschrift (z. B. über „DEIN ORBIT“ auf 1000054140.jpg oder über „TRAINING“ auf 1000054134.jpg).
+​Vorteil: Beim Öffnen der App oder beim Wechseln der Tabs wird dem Nutzer sofort die Identität der App mit einem Wow-Effekt präsentiert. Es fühlt sich weniger nach einer sterilen Website und viel mehr nach einem immersiven Spiel an.
+​🚀 Meine Entwickler-Empfehlung
+​Ich empfehle dir Option 1 (Die Kapsel-Integration) für die dauerhafte Navigation. Warum? Weil deine App extrem gut strukturierte, große KPI-Karten (3 Aktiv, 13 Fällig, 43 Gelernt) nutzt. Wenn wir das Logo zu groß darüber klatschen (Option 2), rutschen diese wichtigen Infos auf kleineren Smartphones zu weit nach unten aus dem sichtbaren Bereich (Fold).
+​Wenn du den Schriftzug „VocaOrbit“ in einer feinen, modernen Sans-Serif-Schrift direkt neben das Icon in die lila Kapsel setzt, wirkt das extrem hochwertig, wie bei einer nativen Premium-App.
+​Welche der beiden Varianten fühlt sich für deine Vision besser an?
