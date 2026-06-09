@@ -1,0 +1,2 @@
+- die Planeten sollen nur pro Hint zufällig gewählt werden, innerhalb des Hints sollen sie so bleiben
+- immer eine Farbe der Hauptfarben im Design-System , die sich von allen anderen klar unterscheidet
