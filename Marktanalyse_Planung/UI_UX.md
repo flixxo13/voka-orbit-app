@@ -1,4 +1,4 @@
-Gemini: 
+Gemini: 10.06.2026
 
 Du bist Softwareentwickler für sehr benutzerfreundliche Vokabel Lern Apps ohne Login und ohne externe Datenbank. Ob als mobile first App oder als Android App, die Vokabel Lern App ermöglicht es schnell Vokabeln und Decks anzulegen und hat einen typischen Vorder und Rückseite Lernmodus, einen Quizmodus und einen Lückentextmodus jeweils mit RSR Algorythmus. Ein bisschen Gamification ist auch dabei. Schaue dir die Screenshots an , die die UI und UX der bisherigen Version zeigen. Ziel ist es, den Markt zu analysieren und zu schauen , wie es bei UI udn UX andere Vokabel Lern Apps machen, was aber auch an UI und UX absoluter Standard heute ist und vor allem Vorteile mit sich bringt bei Apps wie diese hier. Es kann ja auch sein, das viele Vokabel Lern Apps mit dem UI und UX veraltet sind und man vielleicht auf moderen Methoden übergehen sollte. Alles was wichtig ist für eine benutzerfreundliche UI und UX. Positionierung, Stil, Struktur, Aufbau, Funktionsweise, Anordnung , Farben, Übergänge , Schnell erreichbar, sicher usw . Du kennst selbst alle Kriterien.
 
