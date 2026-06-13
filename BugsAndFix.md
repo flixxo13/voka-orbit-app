@@ -37,3 +37,5 @@
 - Zähler und Zeitsperre nach Vokabel , links, rechts slide im Lernmodus
 
 - beim hochscrollen leuchtet der obere Bereich etwss stärker
+
+- alle vier Bewertungsoptionen über swipe lösen, z.b. rechts unten und rechts oben 
